@@ -1,0 +1,27 @@
+.custom-control .switch-background {
+    -fx-pref-width       : 76;
+    -fx-pref-height      : 46;
+    -fx-min-width        : 76;
+    -fx-min-height       : 46;
+    -fx-max-width        : 76;
+    -fx-max-height       : 46;
+    -fx-background-radius: 1024;
+    -fx-background-color : #a3a4a6;
+}
+.custom-control:on .switch-background {
+    -fx-background-radius: 1024;
+    -fx-background-color : -color;
+}
+.custom-control .thumb {
+    -fx-translate-x      : 2;
+    -fx-translate-y      : 2;
+    -fx-pref-width       : 42;
+    -fx-pref-height      : 42;
+    -fx-min-width        : 42;
+    -fx-min-height       : 42;
+    -fx-max-width        : 42;
+    -fx-max-height       : 42;
+    -fx-background-radius: 1024;
+    -fx-background-color : white;
+    -fx-effect           : dropshadow(two-pass-box, rgba(0, 0, 0, 0.3), 1, 0.0, 0, 1);
+}
