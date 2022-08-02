@@ -493,6 +493,6 @@ public class LcdClock extends Control {
 
     @Override
     public String getUserAgentStylesheet() {
-        return getClass().getResource("/other/" + getClass().getSimpleName().toLowerCase() + ".css").toExternalForm();
+        return getClass().getResource("/other/lcd/" + getClass().getSimpleName().toLowerCase() + ".css").toExternalForm();
     }
 }

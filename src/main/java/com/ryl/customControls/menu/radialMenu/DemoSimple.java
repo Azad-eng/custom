@@ -32,7 +32,7 @@ public class DemoSimple extends Application {
                                                                .simpleMode(true)
                                                                .strokeVisible(false)
                                                                .build())
-                                              .items(MenuItemBuilder.create().thumbnailImageName(getClass().getResource("star.png").toExternalForm()).size(64).build(),
+                                              .items(MenuItemBuilder.create().thumbnailImageName(getClass().getResource("/menu/radialMenu/star.png").toExternalForm()).size(64).build(),
                                                             MenuItemBuilder.create().symbol(SymbolType.LOCATION).tooltip("Location").size(64).build(),
                                                             MenuItemBuilder.create().selectable(true).symbol(SymbolType.MUSIC).tooltip("Music").size(64).build(),
                                                             MenuItemBuilder.create().symbol(SymbolType.SPEECH_BUBBLE).tooltip("Chat").size(64).build(),

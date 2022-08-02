@@ -102,7 +102,9 @@ public class SubmitButton extends Region {
         color            = new ObjectPropertyBase<Color>(Color.web("#00ca94")) {
             @Override protected void invalidated() {
                 super.invalidated();
-                if (null == get()) set(Color.web("00ca94"));
+                if (null == get()) {
+                    set(Color.web("00ca94"));
+                }
                 frameColor.set(get());
                 textColor.set(get());
                 redraw();
@@ -129,7 +131,9 @@ public class SubmitButton extends Region {
         iconColor        = new ObjectPropertyBase<Color>(Color.WHITE) {
             @Override protected void invalidated() {
                 super.invalidated();
-                if (null == get()) set(Color.WHITE);
+                if (null == get()) {
+                    set(Color.WHITE);
+                }
             }
             @Override public Object getBean() { return SubmitButton.this; }
             @Override public String getName() { return "iconColor"; }
@@ -138,7 +142,9 @@ public class SubmitButton extends Region {
             @Override protected void invalidated() {
                 set(clamp(0, 1, get()));
                 progressBar.setLength(-360.0 * get());
-                if (Double.compare(get(), 1.0) >= 0) animateFromProgressSuccess();
+                if (Double.compare(get(), 1.0) >= 0) {
+                    animateFromProgressSuccess();
+                }
             }
             @Override public Object getBean() { return SubmitButton.this; }
             @Override public String getName() { return "progress"; }
@@ -379,8 +385,12 @@ public class SubmitButton extends Region {
     }
 
     private double clamp(final double MIN, final double MAX, final double VALUE) {
-        if (Double.compare(VALUE, MIN) < 0) return MIN;
-        if (Double.compare(VALUE, MAX) > 0) return MAX;
+        if (Double.compare(VALUE, MIN) < 0) {
+            return MIN;
+        }
+        if (Double.compare(VALUE, MAX) > 0) {
+            return MAX;
+        }
         return VALUE;
     }
 
