@@ -16,6 +16,7 @@
 
 package com.ryl.customControls.button.piButton;
 
+import com.ryl.customControls.button.piButton.skin.PiButtonSkin;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
@@ -28,6 +29,7 @@ import javafx.event.EventHandler;
 import javafx.event.EventTarget;
 import javafx.event.EventType;
 import javafx.scene.control.Control;
+import javafx.scene.control.Skin;
 import javafx.scene.paint.Color;
 
 
@@ -120,9 +122,13 @@ public class PiButton extends Control {
     public String getUserAgentStylesheet() {
         return getClass().getResource("/button/piButton/piButton.css").toExternalForm();
     }
-    
-    
-    // ******************** Inner classes *************************************        
+
+    @Override
+    protected Skin<?> createDefaultSkin() {
+        return new PiButtonSkin(this);
+    }
+
+    // ******************** Inner classes *************************************
     public static class SelectEvent extends Event {
         public static final EventType<SelectEvent> SELECT   = new EventType(ANY, "select");
         public static final EventType<SelectEvent> DESELECT = new EventType(ANY, "deselect");
