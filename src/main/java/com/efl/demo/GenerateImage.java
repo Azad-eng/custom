@@ -102,6 +102,31 @@ public class GenerateImage extends Application {
         System.out.println(list2.toString());
     }
 
+    private static int binarySearchKey(Object[] array, int targetNum) {
+        Arrays.sort(array);
+        int left = 0, right = 0;
+        for (right = array.length - 1; left != right; ) {
+            int midIndex = (right + left) / 2;
+            int mid = (right - left);
+            int midValue = (Integer) array[midIndex];
+            if (targetNum == midValue) {
+                return midIndex;
+            }
+            if (targetNum > midValue) {
+                left = midIndex;
+            } else {
+                right = midIndex;
+            }
+            if (mid <= 1) {
+                break;
+            }
+        }
+        int rightnum = ((Integer) array[right]).intValue();
+        int leftnum = ((Integer) array[left]).intValue();
+        int ret = Math.abs((rightnum - leftnum) / 2) > Math.abs(rightnum - targetNum) ? rightnum : leftnum;
+        return ret;
+    }
+
     @Override
     public void stop() {
         Platform.exit();
