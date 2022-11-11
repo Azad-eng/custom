@@ -84,7 +84,7 @@ public class GenerateImage extends Application {
     private int[] generateColorPixelsArrByDataFile(String filePath) {
         List<String> intensityList = new ArrayList<>();
         List<String> controlDataList = new ArrayList<>();
-        int[] intensityArr = new int[0];
+        double[] intensityArr = new double[0];
         String line;
         int index1 = 0;
         int index2 = 0;
@@ -92,7 +92,7 @@ public class GenerateImage extends Application {
             String[] str = br.readLine().split("x");
             widthDivNum = Integer.parseInt(str[0]);
             heightDivNum = Integer.parseInt(str[1]);
-            intensityArr = new int[widthDivNum * heightDivNum];
+            intensityArr = new double[widthDivNum * heightDivNum];
             while ((line = br.readLine()) != null) {
                 //匹配任意空白行
                 if (line.matches( "\\s*")){
@@ -112,7 +112,7 @@ public class GenerateImage extends Application {
         for (String value : intensityList) {
             String[] str = value.split(" ");
             for (String s : str) {
-                intensityArr[index] = Integer.parseInt(s);
+                intensityArr[index] = Double.parseDouble(s);
                 index++;
             }
         }
@@ -131,7 +131,7 @@ public class GenerateImage extends Application {
      * @param controlDataMap 对照数据集合
      * @return 返回转换后的灰度像素数组
      */
-    private int[] intensityArrConvert2ColorPixelsArr(int[] intensityArr, Integer[] binarySearchArr, Map<Integer, Integer> controlDataMap){
+    private int[] intensityArrConvert2ColorPixelsArr(double[] intensityArr, Integer[] binarySearchArr, Map<Integer, Integer> controlDataMap){
         int[] colorStrPixels = new int[intensityArr.length];
         for (int i = 0; i < intensityArr.length; i++) {
             int grayScaleNum = getKey(controlDataMap, binarySearchClosestTargetNum(binarySearchArr, getPercentageOnlyNum(intensityArr[indexOfSmallest(intensityArr)], intensityArr[i])));
@@ -192,11 +192,11 @@ public class GenerateImage extends Application {
      * @param array 目标数组
      * @return 最小值的index
      */
-    private int indexOfSmallest(int[] array){
+    private int indexOfSmallest(double[] array){
         if (array.length == 0)
             return -1;
         int index = 0;
-        int min = array[index];
+        double min = array[index];
         for (int i = 1; i < array.length; i++){
             if (array[i] < min){
                 min = array[i];
