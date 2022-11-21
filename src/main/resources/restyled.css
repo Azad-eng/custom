@@ -4,6 +4,28 @@
  * 2.Different kind of checkmark
  * 3.Background filled when selected
  * 4.Different focus indicator */
+.my-rect {
+    /*矩形填充颜色，默认黑色*/
+    -fx-fill: lavender;
+    /*边框线颜色*/
+    -fx-stroke: olive;
+    /*边框线宽度，默认1*/
+    -fx-stroke-width: 5;
+    /* 当只有一个参数时，该参数代表每段虚线的宽度，如果没有设置-fx-stroke-width，该参数也代表了虚线之间的间距，否则间距为-fx-stroke-width*/
+    /*-fx-stroke-dash-array: 20;*/
+    /* 参数1代表每段虚线的宽度，参数2代表了虚线之间的间距*/
+    -fx-stroke-dash-array: 30 10;
+    /* 虚-间的重复 40（虚）-20（间）-2（虚）-40（间）*/
+   /* -fx-stroke-dash-array: 40 20 2;*/
+    /* 虚-间的重复 12（虚）-2（间）-4（虚）-2（间）*/
+    -fx-stroke-dash-array: 12 2 4 2;
+    /* 参数为正，虚线整体左移参数个单位，反之右移*/
+    -fx-stroke-dash-offset: 6;
+    /* stroke-line-cap "笔划端点"的属性定义了开放笔划(未闭合)的端点的形状。分别是["粗大的"butt | "圆滑的"round | "平整的"square]，默认square */
+    -fx-stroke-line-cap: butt;
+    /* stroke-line-join 属性定义了连接点的形状。分别是["斜接的"miter | "圆滑的"round | "斜角的"bevel]，默认miter */
+    -fx-stroke-line-join: round;
+}
 
 /** 在组件CheckBox的css默认类check-box上做改动 **/
 .check-box {
