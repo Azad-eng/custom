@@ -1,0 +1,5 @@
+.button {
+    -fx-focus-traversable: false;
+    -fx-cursor: HAND;
+    -fx-padding: 4;
+}
