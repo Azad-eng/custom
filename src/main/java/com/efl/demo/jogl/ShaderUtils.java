@@ -6,7 +6,7 @@ import com.jogamp.opengl.GL2;
  * @author: EFL-ryl
  */
 public class ShaderUtils {
-    static int createShaderProgram(GL2 gl, String vertexShaderFilePath, String fragmentShaderFilePath) {
+    public static int createShaderProgram(GL2 gl, String vertexShaderFilePath, String fragmentShaderFilePath) {
 
         String[] vShaderSource = FileUtils.readShaderSource(vertexShaderFilePath);
         String[] fShaderSource = FileUtils.readShaderSource(fragmentShaderFilePath);

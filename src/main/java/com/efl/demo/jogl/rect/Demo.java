@@ -1,13 +1,18 @@
-package com.efl.demo.jogl;
+package com.efl.demo.jogl.rect;
 
+import com.efl.demo.jogl.ShaderUtils;
 import com.jogamp.common.nio.Buffers;
-import com.jogamp.opengl.*;
+import com.jogamp.opengl.GL;
+import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GLAutoDrawable;
+import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.awt.GLJPanel;
+
 import javax.swing.*;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
-import static com.jogamp.opengl.GL.GL_ARRAY_BUFFER;
-import static com.jogamp.opengl.GL.GL_STATIC_DRAW;
+import static com.jogamp.opengl.GL.*;
 
 /**
  * @author: EFL-ryl
@@ -16,21 +21,24 @@ public class Demo extends JFrame implements GLEventListener {
     private GLJPanel glJPanel;
     //着色器程序对象(Shader Program Object)
     private int renderingProgram;
-    //顶点缓冲对象是我们在OpenGL教程中第一个出现的OpenGL对象。就像OpenGL中的其它对象一样，这个缓冲有一个独一无二的ID，
-    //所以我们可以使用glGenBuffers函数和一个缓冲ID生成一个VBO对象
     private int VBO[] = new int[1];
-    //顶点数组对象(Vertex Array Object, VAO)可以像顶点缓冲对象那样被绑定，任何随后的顶点属性调用都会储存在这个VAO中。这样的好处就是，
-    //当配置顶点属性指针时，你只需要将那些调用执行一次，之后再绘制物体的时候只需要绑定相应的VAO就行了。这使在不同顶点数据和属性配置之间
-    //切换变得非常简单，只需要绑定不同的VAO就行了。
     private int VAO[] = new int[1];
-    //三角形：由于OpenGL是在3D空间中工作的，而我们渲染的是一个2D三角形，我们将它顶点的z坐标设置为0.0。
-    //       这样子的话三角形每一点的深度(Depth)都是一样的，从而使它看上去像是2D的
+    //索引缓冲对象(Element Buffer Object，EBO，也叫Index Buffer Object，IBO)。和顶点缓冲对象VBO一样，EBO也是一个缓冲，
+    //它专门储存索引，OpenGL调用这些顶点的索引来决定该绘制哪个顶点。
+    private int EBO[] = new int[1];
+    //2D矩形
     float[] vertices = {
-            -0.5f, -0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            0.0f, 0.5f, 0.0f
+            0.5f, 0.5f, 0.0f,   // 右上角
+            0.5f, -0.5f, 0.0f,  // 右下角
+            -0.5f, -0.5f, 0.0f, // 左下角
+            -0.5f, 0.5f, 0.0f   // 左上角
+    };
+    int[] indices = {
+            0, 1, 3, // 第一个三角形
+            1, 2, 3  // 第二个三角形
     };
     private FloatBuffer vertBuf = Buffers.newDirectFloatBuffer(vertices);
+    private IntBuffer indiBuf = Buffers.newDirectIntBuffer(indices);
 
 
     Demo() {
@@ -51,26 +59,17 @@ public class Demo extends JFrame implements GLEventListener {
     @Override
     public void init(GLAutoDrawable drawable) {
         GL2 gl = drawable.getGL().getGL2();
-        //GL3 gl = (GL3) drawable.getGL();
+        //生成EBO对象
+        gl.glGenBuffers(this.EBO.length, this.EBO, 0);
+        //与VBO类似，我们先绑定EBO然后用glBufferData把索引复制到缓冲里。同样，和VBO类似，
+        //我们会把这些函数调用放在绑定和解绑函数调用之间，只不过这次我们把缓冲的类型定义为GL_ELEMENT_ARRAY_BUFFER
+        gl.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
+        gl.glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiBuf.limit() * 4L, indiBuf, GL_STATIC_DRAW);
+
         //生成VBO对象
         gl.glGenBuffers(this.VBO.length, this.VBO, 0);
-        //OpenGL有很多缓冲对象类型，顶点缓冲对象的缓冲类型是GL_ARRAY_BUFFER。OpenGL允许我们同时绑定多个缓冲，只要它们是不同的缓冲类型。
-        //我们可以使用glBindBuffer函数把新创建的缓冲绑定到GL_ARRAY_BUFFER目标上：
         gl.glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-        //从这一刻起，我们使用的任何（在GL_ARRAY_BUFFER目标上的）缓冲调用都会用来配置当前绑定的缓冲(VBO)。
-        //然后我们可以调用glBufferData函数，它会把之前定义的顶点数据复制到缓冲的内存中：
         gl.glBufferData(GL_ARRAY_BUFFER, vertBuf.limit() * 4L, vertBuf, GL_STATIC_DRAW);
-        /**
-         * glBufferData是一个专门用来把用户定义的数据复制到当前绑定缓冲的函数。它的第一个参数是目标缓冲的类型：
-         * 顶点缓冲对象当前绑定到GL_ARRAY_BUFFER目标上。第二个参数指定传输数据的大小(以字节为单位)；用一个简单的sizeof
-         * 计算出顶点数据大小就行。第三个参数是我们希望发送的实际数据。
-         *
-         * 第四个参数指定了我们希望显卡如何管理给定的数据。它有三种形式：
-         *
-         * GL_STATIC_DRAW ：数据不会或几乎不会改变
-         * GL_DYNAMIC_DRAW：数据会被改变很多
-         * GL_STREAM_DRAW ：数据每次绘制时都会改变
-         */
 
         //现在我们已经把顶点数据储存在显卡的内存中，用VBO这个顶点缓冲对象管理。下面会创建一个顶点和片段着色器来真正处理这些数据:
         renderingProgram = ShaderUtils.createShaderProgram(gl,
@@ -97,16 +96,19 @@ public class Demo extends JFrame implements GLEventListener {
         // 绑定到GL_ARRAY_BUFFER的VBO决定的。由于在调用glVetexAttribPointer之前绑定的是先前定义的VBO对象，顶点属性0现在会链接到它的顶点数据。】
 
         //创建VAO对象
-        gl.glGenVertexArrays(this.VAO.length, this.VAO, 0);
+        gl.glGenVertexArrays(VAO.length, VAO, 0);
         //要想使用VAO，要做的只是使用glBindVertexArray绑定VAO。从绑定之后起，我们应该绑定和配置对应的VBO和属性指针，
         //之后解绑VAO供之后使用。当我们打算绘制一个物体的时候，我们只要在绘制物体前简单地把VAO绑定到希望使用的设定上就行了
         // ..:: 初始化代码（只运行一次 (除非你的物体频繁改变)） :: ..
         // 1. 绑定VAO
-        gl.glBindVertexArray(this.VAO[0]);
+        gl.glBindVertexArray(VAO[0]);
         // 2. 把顶点数组复制到缓冲中供OpenGL使用
         gl.glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
         gl.glBufferData(GL_ARRAY_BUFFER, vertBuf.limit() * 4L, vertBuf, GL_STATIC_DRAW);
-        // 3. 设置顶点属性指针
+        // 3.1 复制我们的索引数组到一个索引缓冲中，供OpenGL使用
+        gl.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
+        gl.glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiBuf.limit() * 4L, indiBuf, GL_STATIC_DRAW);
+        // 3.2 设置顶点属性指针
         gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 3 * 4, 0);
         gl.glEnableVertexAttribArray(0);
         //4. 解绑VAO
@@ -122,8 +124,15 @@ public class Demo extends JFrame implements GLEventListener {
         gl.glUseProgram(renderingProgram);
         //绑定VAO
         gl.glBindVertexArray(VAO[0]);
-        //OpenGL给我们提供了glDrawArrays函数，它使用当前激活的着色器，之前定义的顶点属性配置，和VBO的顶点数据（通过VAO间接绑定）来绘制图元
-        gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 3);
+        //要注意的是，我们传递了GL_ELEMENT_ARRAY_BUFFER当作缓冲目标。最后一件要做的事是用glDrawElements来替换glDrawArrays函数，
+        //来指明我们从索引缓冲渲染。使用glDrawElements时，我们会使用当前绑定的索引缓冲对象中的索引进行绘制：
+        gl.glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 3);
+        /**
+         * 第一个参数指定了我们绘制的模式，这个和glDrawArrays的一样。第二个参数是我们打算绘制顶点的个数，这里填6，也就是说我们一共
+         * 需要绘制6个顶点。第三个参数是索引的类型，这里是GL_UNSIGNED_INT。最后一个参数里我们可以指定EBO中的偏移量（或者传递一个索
+         * 引数组，但是这是当你不在使用索引缓冲对象的时候），但是我们会在这里填写0。
+         */
         //解绑VAO
         gl.glBindVertexArray(0);
     }
