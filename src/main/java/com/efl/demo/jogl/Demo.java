@@ -1,10 +1,7 @@
 package com.efl.demo.jogl;
 
 import com.jogamp.common.nio.Buffers;
-import com.jogamp.opengl.GL;
-import com.jogamp.opengl.GL3;
-import com.jogamp.opengl.GLAutoDrawable;
-import com.jogamp.opengl.GLEventListener;
+import com.jogamp.opengl.*;
 import com.jogamp.opengl.awt.GLJPanel;
 import javax.swing.*;
 import java.nio.FloatBuffer;
@@ -53,7 +50,8 @@ public class Demo extends JFrame implements GLEventListener {
 
     @Override
     public void init(GLAutoDrawable drawable) {
-        GL3 gl = (GL3) drawable.getGL();
+        GL2 gl = drawable.getGL().getGL2();
+        //GL3 gl = (GL3) drawable.getGL();
         //生成VBO对象
         gl.glGenBuffers(this.VBO.length, this.VBO, 0);
         //OpenGL有很多缓冲对象类型，顶点缓冲对象的缓冲类型是GL_ARRAY_BUFFER。OpenGL允许我们同时绑定多个缓冲，只要它们是不同的缓冲类型。
@@ -75,7 +73,7 @@ public class Demo extends JFrame implements GLEventListener {
          */
 
         //现在我们已经把顶点数据储存在显卡的内存中，用VBO这个顶点缓冲对象管理。下面会创建一个顶点和片段着色器来真正处理这些数据:
-        this.renderingProgram = ShaderUtils.createShaderProgram(gl,
+        renderingProgram = ShaderUtils.createShaderProgram(gl,
                 "E:\\Aazd-Home\\myStudySpace\\javaxFxLearn\\custom\\src\\main\\resources\\shaders\\elementFS.glsl",
                 "E:\\Aazd-Home\\myStudySpace\\javaxFxLearn\\custom\\src\\main\\resources\\shaders\\elementVS.glsl");
 
@@ -118,14 +116,14 @@ public class Demo extends JFrame implements GLEventListener {
 
     @Override
     public void display(GLAutoDrawable drawable) {
-        GL3 gl = (GL3) drawable.getGL();
+        GL2 gl = drawable.getGL().getGL2();
         //调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象。
         //在glUseProgram函数调用之后，每个着色器调用和渲染调用都会使用这个程序对象（也就是之前写的着色器)了
-        gl.glUseProgram(this.renderingProgram);
+        gl.glUseProgram(renderingProgram);
         //绑定VAO
         gl.glBindVertexArray(VAO[0]);
         //OpenGL给我们提供了glDrawArrays函数，它使用当前激活的着色器，之前定义的顶点属性配置，和VBO的顶点数据（通过VAO间接绑定）来绘制图元
-        gl.glDrawArrays(GL3.GL_TRIANGLES, 0, 3);
+        gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 3);
         //解绑VAO
         gl.glBindVertexArray(0);
     }

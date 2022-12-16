@@ -1,4 +1,4 @@
-package com.efl.demo.jogl;
+package com.efl.demo.drawByVBO;
 
 import com.jogamp.opengl.GL2;
 
