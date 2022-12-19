@@ -27,9 +27,10 @@ public class Demo extends JFrame implements GLEventListener {
     //三角形：由于OpenGL是在3D空间中工作的，而我们渲染的是一个2D三角形，我们将它顶点的z坐标设置为0.0。
     //       这样子的话三角形每一点的深度(Depth)都是一样的，从而使它看上去像是2D的
     float[] vertices = {
-            -0.5f, -0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            0.0f, 0.5f, 0.0f
+            // 位置              // 颜色
+            0.0f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
+            -0.5f, 0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
+            0.5f, 0.5f, 0.0f,  0.0f, 0.0f, 1.0f
     };
     private FloatBuffer vertBuf = Buffers.newDirectFloatBuffer(vertices);
 
@@ -80,10 +81,10 @@ public class Demo extends JFrame implements GLEventListener {
 
         //现在，我们已经把输入顶点数据发送给了GPU，并指示了GPU如何在顶点和片段着色器中处理它。就快要完成了，但还没结束，
         //OpenGL还不知道它该如何解释内存中的顶点数据，以及它该如何将顶点数据链接到顶点着色器的属性上。我们需要告诉OpenGL怎么做:
-        gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 3 * 4, 0);
+        //gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 3 * 4, 0);
         //现在我们已经定义了OpenGL该如何解释顶点数据，我们现在应该使用glEnableVertexAttribArray，以顶点属性位置值作为参数，启用顶点属性；顶点属性默认是禁用的。
         //自此，所有东西都已经设置好了：我们使用一个顶点缓冲对象将顶点数据初始化至缓冲中，建立了一个顶点和一个片段着色器，并告诉了OpenGL如何把顶点数据链接到顶点着色器的顶点属性上
-        gl.glEnableVertexAttribArray(0);
+        //gl.glEnableVertexAttribArray(0);
         /**
          * glVertexAttribPointer函数的参数非常多：
          *
@@ -108,8 +109,18 @@ public class Demo extends JFrame implements GLEventListener {
         gl.glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
         gl.glBufferData(GL_ARRAY_BUFFER, vertBuf.limit() * 4L, vertBuf, GL_STATIC_DRAW);
         // 3. 设置顶点属性指针
-        gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 3 * 4, 0);
+        /**
+         * 由于我们现在有了两个顶点属性，我们不得不重新计算步长值。为获得数据队列中下一个属性值（比如位置向量的下个x分量）我们
+         * 必须向右移动6个float，其中3个是位置值，另外3个是颜色值。这使我们的步长值为6乘以float的字节数（=24字节）。
+         * 同样，这次我们必须指定一个偏移量。对于每个顶点来说，位置顶点属性在前，所以它的偏移量是0。颜色属性紧随位置数据之后，所以
+         * 偏移量就是3 * sizeof(GLfloat)，用字节来计算就是12字节
+         */
+        //位置属性
+        gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 6 * 4, 0);
         gl.glEnableVertexAttribArray(0);
+        //颜色属性
+        gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 6 * 4, 3 * 4);
+        gl.glEnableVertexAttribArray(1);
         //4. 解绑VAO
         gl.glBindVertexArray(0);
         //【通常情况下当我们配置好OpenGL对象以后要解绑它们，这样我们才不会在其它地方错误地配置它们】
