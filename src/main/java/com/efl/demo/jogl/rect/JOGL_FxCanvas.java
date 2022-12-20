@@ -1,4 +1,4 @@
-package com.efl.demo.drawByVBO;
+package com.efl.demo.jogl.rect;
 
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLDrawableFactory;
@@ -7,10 +7,9 @@ import com.jogamp.opengl.GLProfile;
 import javafx.scene.canvas.Canvas;
 
 /**
- * @author EFL-tjl
+ * @author: EFL-ryl
  */
 public class JOGL_FxCanvas extends Canvas {
-
     private final GLOffscreenAutoDrawable glDrawBuffer;
     private final GLEventImpl glEvent;
 
