@@ -16,7 +16,7 @@ import static com.jogamp.opengl.GL.GL_STATIC_DRAW;
 public class Demo extends JFrame implements GLEventListener {
     private GLJPanel glJPanel;
     //着色器程序对象(Shader Program Object)
-    private int renderingProgram;
+    private int shaderProgram;
     //顶点缓冲对象是我们在OpenGL教程中第一个出现的OpenGL对象。就像OpenGL中的其它对象一样，这个缓冲有一个独一无二的ID，
     //所以我们可以使用glGenBuffers函数和一个缓冲ID生成一个VBO对象
     private int VBO[] = new int[1];
@@ -75,7 +75,7 @@ public class Demo extends JFrame implements GLEventListener {
          */
 
         //现在我们已经把顶点数据储存在显卡的内存中，用VBO这个顶点缓冲对象管理。下面会创建一个顶点和片段着色器来真正处理这些数据:
-        renderingProgram = ShaderUtils.createShaderProgram(gl,
+        shaderProgram = ShaderUtils.createShaderProgram(gl,
                 "E:\\Aazd-Home\\myStudySpace\\javaxFxLearn\\custom\\src\\main\\resources\\shaders\\2\\elementVS.glsl",
                 "E:\\Aazd-Home\\myStudySpace\\javaxFxLearn\\custom\\src\\main\\resources\\shaders\\2\\elementFS.glsl");
 
@@ -131,7 +131,7 @@ public class Demo extends JFrame implements GLEventListener {
         GL2 gl = drawable.getGL().getGL2();
         //调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象。
         //在glUseProgram函数调用之后，每个着色器调用和渲染调用都会使用这个程序对象（也就是之前写的着色器)了
-        gl.glUseProgram(renderingProgram);
+        gl.glUseProgram(shaderProgram);
         //绑定VAO
         gl.glBindVertexArray(VAO[0]);
         //OpenGL给我们提供了glDrawArrays函数，它使用当前激活的着色器，之前定义的顶点属性配置，和VBO的顶点数据（通过VAO间接绑定）来绘制图元

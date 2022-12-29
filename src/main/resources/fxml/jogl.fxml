@@ -4,8 +4,46 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.StackPane?>
 
+<?import javafx.scene.image.ImageView?>
+<?import com.jfoenix.controls.JFXButton?>
+<?import javafx.scene.image.Image?>
 <StackPane prefHeight="522.0" prefWidth="667.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.efl.demo.jogl.rect.JOGLController">
     <ScrollPane fx:id="pane3D" minHeight="300" minWidth="300" />
-    <AnchorPane onMousePressed="#mousePressed" prefHeight="200.0" prefWidth="200.0" stylesheets="/efl/ButtonStyle.css">
+    <AnchorPane onMouseDragged="#mouseDragged" onMousePressed="#mousePressed" onScroll="#mouseScroll" prefHeight="200.0" prefWidth="200.0" stylesheets="/efl/ButtonStyle.css">
+        <JFXButton layoutX="6.0" layoutY="6.0" onAction="#orthoView">
+            <graphic>
+                <ImageView fx:id="orthoImage">
+                    <Image url="@../icons/orthoNot.png" />
+                </ImageView>
+            </graphic>
+        </JFXButton>
+        <JFXButton layoutX="46.0" layoutY="6.0" onAction="#frontView">
+            <graphic>
+                <ImageView>
+                    <Image url="@../icons/frontView.png" />
+                </ImageView>
+            </graphic>
+        </JFXButton>
+        <JFXButton layoutX="86.0" layoutY="6.0" onAction="#leftView">
+            <graphic>
+                <ImageView>
+                    <Image url="@../icons/leftView.png" />
+                </ImageView>
+            </graphic>
+        </JFXButton>
+        <JFXButton layoutX="126.0" layoutY="6.0" onAction="#topView">
+            <graphic>
+                <ImageView>
+                    <Image url="@../icons/topView.png" />
+                </ImageView>
+            </graphic>
+        </JFXButton>
+        <JFXButton layoutX="166.0" layoutY="6.0" onAction="#isometricView">
+            <graphic>
+                <ImageView>
+                    <Image url="@../icons/isometric.png" />
+                </ImageView>
+            </graphic>
+        </JFXButton>
     </AnchorPane>
 </StackPane>

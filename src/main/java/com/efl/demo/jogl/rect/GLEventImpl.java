@@ -3,7 +3,11 @@ package com.efl.demo.jogl.rect;
 import com.efl.demo.jogl.ShaderUtils;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.*;
+import com.jogamp.opengl.glu.GLU;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
+import org.joml.Matrix4f;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -14,7 +18,7 @@ import static com.jogamp.opengl.GL.*;
 /**
  * @author: EFL-ryl
  */
-public class GLEventImpl implements GLEventListener {
+public class GLEventImpl extends Canvas implements GLEventListener {
     //着色器程序对象(Shader Program Object)
     private int shaderProgram;
     private int VBO[] = new int[1];
@@ -22,12 +26,67 @@ public class GLEventImpl implements GLEventListener {
     //索引缓冲对象(Element Buffer Object，EBO，也叫Index Buffer Object，IBO)。和顶点缓冲对象VBO一样，EBO也是一个缓冲，
     //它专门储存索引，OpenGL调用这些顶点的索引来决定该绘制哪个顶点。
     private int EBO[] = new int[1];
-    //2D矩形
+    private static final PixelFormat<ByteBuffer> pxFormat = PixelFormat.getByteBgraInstance();
+    public static float scale = 1.0f, maxscale = 20.0f, minscale = 0.2f;
+    public static float[] rotate = {-45.0f, 45.0f};
+    public static float[] translate = {-24f, -14f, -30f};
+    public static float[] position = {0f, 0f, 5f};
+    // horizontal angle : toward -Z
+    float horizontalAngle = 3.14f;
+    // vertical angle : 0, look at the horizon
+    float verticalAngle = 0.0f;
+    // Initial Field of View
+    float initialFoV = 45.0f;
+    float speed = 3.0f; // 3 units / second
+    float mouseSpeed = 0.005f;
+    public static boolean ortho = false;
+    private GLU glu = new GLU();
+    //加载并创建贴图
+    int[] texture1 = new int[1];
+    int[] texture2 = new int[1];
     float[] vertices = {
-            0.5f, 0.5f, 0.0f,   // 右上角
-            0.5f, -0.5f, 0.0f,  // 右下角
-            -0.5f, -0.5f, 0.0f, // 左下角
-            -0.5f, 0.5f, 0.0f   // 左上角
+            //坐标
+            -0.5f, -0.5f, -0.5f,
+            0.5f, -0.5f, -0.5f,
+            0.5f,  0.5f, -0.5f,
+            0.5f,  0.5f, -0.5f,
+            -0.5f,  0.5f, -0.5f,
+            -0.5f, -0.5f, -0.5f,
+
+            -0.5f, -0.5f,  0.5f,
+            0.5f, -0.5f,  0.5f,
+            0.5f,  0.5f,  0.5f,  
+            0.5f,  0.5f,  0.5f,  
+            -0.5f,  0.5f,  0.5f,  
+            -0.5f, -0.5f,  0.5f,  
+
+            -0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f, -0.5f,
+            -0.5f, -0.5f, -0.5f,  
+            -0.5f, -0.5f, -0.5f,  
+            -0.5f, -0.5f,  0.5f,  
+            -0.5f,  0.5f,  0.5f,
+
+            0.5f,  0.5f,  0.5f, 
+            0.5f,  0.5f, -0.5f,  
+            0.5f, -0.5f, -0.5f,  
+            0.5f, -0.5f, -0.5f,  
+            0.5f, -0.5f,  0.5f,  
+            0.5f,  0.5f,  0.5f, 
+
+            -0.5f, -0.5f, -0.5f,  
+            0.5f, -0.5f, -0.5f,  
+            0.5f, -0.5f,  0.5f, 
+            0.5f, -0.5f,  0.5f, 
+            -0.5f, -0.5f,  0.5f,  
+            -0.5f, -0.5f, -0.5f,  
+
+            -0.5f,  0.5f, -0.5f,  
+            0.5f,  0.5f, -0.5f,  
+            0.5f,  0.5f,  0.5f, 
+            0.5f,  0.5f,  0.5f, 
+            -0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f, -0.5f
     };
     int[] indices = {
             0, 1, 3, // 第一个三角形
@@ -35,10 +94,6 @@ public class GLEventImpl implements GLEventListener {
     };
     private FloatBuffer vertBuf = Buffers.newDirectFloatBuffer(vertices);
     private IntBuffer indiBuf = Buffers.newDirectIntBuffer(indices);
-    private int ModelViewProjectionMatrix_location;
-    private double t0 = System.currentTimeMillis();
-    private double theta;
-    private double s;
     private PixelWriter pxWriter;
     private int width = 1200;
     private int height = 900;
@@ -47,7 +102,6 @@ public class GLEventImpl implements GLEventListener {
     public GLEventImpl(int width, int height, PixelWriter pxWriter) {
         setBounds(width, height);
         setPxWriter(pxWriter);
-
     }
 
     public void setPxWriter(PixelWriter pxWriter) {
@@ -84,7 +138,6 @@ public class GLEventImpl implements GLEventListener {
 
         //Get a id number to the uniform_Projection matrix
         //so that we can update it.
-        ModelViewProjectionMatrix_location = gl.glGetUniformLocation(shaderProgram, "uniform_Projection");
 
         //现在，我们已经把输入顶点数据发送给了GPU，并指示了GPU如何在顶点和片段着色器中处理它。就快要完成了，但还没结束，
         //OpenGL还不知道它该如何解释内存中的顶点数据，以及它该如何将顶点数据链接到顶点着色器的属性上。我们需要告诉OpenGL怎么做:
@@ -116,80 +169,159 @@ public class GLEventImpl implements GLEventListener {
         gl.glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
         gl.glBufferData(GL_ARRAY_BUFFER, vertBuf.limit() * 4L, vertBuf, GL_STATIC_DRAW);
         // 3.1 复制我们的索引数组到一个索引缓冲中，供OpenGL使用
-        gl.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
-        gl.glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiBuf.limit() * 4L, indiBuf, GL_STATIC_DRAW);
+        //gl.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
+        //gl.glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiBuf.limit() * 4L, indiBuf, GL_STATIC_DRAW);
         // 3.2 设置顶点属性指针
+        //位置属性
         gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 3 * 4, 0);
         gl.glEnableVertexAttribArray(0);
         //4. 解绑VAO
         gl.glBindVertexArray(0);
         //【通常情况下当我们配置好OpenGL对象以后要解绑它们，这样我们才不会在其它地方错误地配置它们】
+
+
+
+        //开启混合功能
+        gl.glEnable(GL2.GL_BLEND);
+        //透明计算函数设置
+        gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+        gl.glBlendEquation(GL.GL_FUNC_ADD);
+        //开启对线\多边形的抗锯齿功能
+        //gl.glEnable(GL.GL_LINE_SMOOTH);
+        //gl.glEnable(GL2.GL_POLYGON_SMOOTH);
+        //深度测试，避免后画的始终显示在先画的上面
+        gl.glEnable(GL2.GL_DEPTH_TEST);
+
+        //LESS+EQUAL如果目标像素z值<＝当前像素z值，则绘制目标像素
+        gl.glDepthFunc(GL2.GL_LEQUAL);
+        gl.glEnable(GL.GL_MULTISAMPLE);
+        ///gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
+        gl.glShadeModel(GL2.GL_SMOOTH);
+        gl.glDepthRange(0.0, 1.0);
+
+        float[] whiteLight = {0.45f, 0.45f, 0.45f, 1.0f};
+        float[] sourceLight = {0.30f, 0.30f, 0.30f, 1.0f};
+        float[] lightPos = {-150f, 25f, 50f, 0.0f};
+
+        gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, whiteLight, 0);
+        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_AMBIENT, sourceLight, 0);
+        //漫反射光颜色：光线直接射到物体表面的颜色
+        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, sourceLight, 0);
+        //位置属性
+        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, lightPos, 0);
+        //启用照明模式
+        gl.glEnable(GL2.GL_LIGHTING);
+        //打开第一个灯光
+        gl.glEnable(GL2.GL_LIGHT0);
+        //启用材质的颜色跟踪
+        gl.glEnable(GL2.GL_COLOR_MATERIAL);
+        gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
+
+        gl.glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
+
     }
 
     @Override
     public void display(GLAutoDrawable drawable) {
         // Update variables used in animation
-        double t1 = System.currentTimeMillis();
-        theta += (t1-t0)*0.005f;
-        t0 = t1;
-        s = Math.sin(theta);
-
-        GL2 gl = drawable.getGL().getGL2();
+        final GL2 gl = drawable.getGL().getGL2();
         // 渲染
         // 清空颜色缓冲
-        gl.glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        gl.glClear(GL_COLOR_BUFFER_BIT);
-        // 更新uniform颜色
-        long timeValue = System.currentTimeMillis();
-        float greenValue = (float) ((Math.sin(timeValue) / 2) + 0.5);
-        int vertexColorLocation = gl.glGetUniformLocation(shaderProgram, "ourColor");
-        /* Change a projection matrix
-         * The matrix multiplications and OpenGL ES2 code below
-         * basically match this OpenGL ES1 code.
-         * note that the model_view_projection matrix gets sent to the vertexShader.
-         *
-         * gl.glLoadIdentity();
-         * gl.glTranslatef(0.0f,0.0f,-0.1f);
-         * gl.glRotatef((float)30f*(float)s,1.0f,0.0f,1.0f);
-         *
-         */
-
-        float[] model_view_projection;
-        float[] identity_matrix = {
-                1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f,
-                0.0f, 0.0f, 0.0f, 1.0f,
-        };
-        model_view_projection = translate(identity_matrix,0.0f,0.0f, -0.1f);
-        model_view_projection = rotate(model_view_projection,30f*(float)s,1.0f,0.0f,1.0f);
-
+        gl.glClearDepth(1.0);
+        gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 
         // 记得激活着色器
         //调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象。
         //在glUseProgram函数调用之后，每个着色器调用和渲染调用都会使用这个程序对象（也就是之前写的着色器)了
         gl.glUseProgram(shaderProgram);
 
-        //// Pass them to the shaders
-        gl.glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-        // Send the final projection matrix to the vertex shader by
-        // using the uniform location id obtained during the init part.
-        gl.glUniformMatrix4fv(ModelViewProjectionMatrix_location, 1, false, model_view_projection, 0);
+        // Get their uniform location
+        int mat4MLoc = gl.glGetUniformLocation(shaderProgram, "model");
+        int mat4VLoc = gl.glGetUniformLocation(shaderProgram, "view");
+        int mat4PLoc = gl.glGetUniformLocation(shaderProgram, "projection");
+
+        FloatBuffer mb = Buffers.newDirectFloatBuffer(16);
+        FloatBuffer vb = Buffers.newDirectFloatBuffer(16);
+        FloatBuffer pb = Buffers.newDirectFloatBuffer(16);
+
+        /**
+         * 模型矩阵
+         * 1.model coordinates ——[model matrix]——>> world coordinates
+         * 通过将顶点坐标乘以下面的模型矩阵我们将该顶点坐标转换到世界坐标
+         */
+        Matrix4f matrix4f = new Matrix4f();
+        matrix4f.identity();
+        matrix4f.rotate(-55.0f, 1.0f, 0.0f, 0.0f).get(mb);
+        //matrix4f.rotate(rotate[0], 1.0f, 0.0f, 0.0f).get(mb);
+        //matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(mb);
+        //matrix4f.translate(0.0f, 0.2f, -1.0f/scale).get(mb);
+        /**
+         * 观察矩阵
+         * 2.world coordinates ——[view matrix]——>> camera coordinates
+         */
+        new Matrix4f()
+                // 注意，我们将矩阵向我们要进行移动场景的反向移动
+                .translate(0.0f, 0.0f, -3.0f / scale)
+                .lookAt( // the position of your camera, in world space
+                        0.0f, 0.0f, -3.0f, //Camera is at (0,0,3), in World Space
+                        // where you want to look at, in world space
+                        0.0f, 0.0f, 0.0f, //and looks at the origin
+                        // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
+                        0.0f, 1.0f, 0.0f) //Head is up (set to 0,-1,0 to look upside-down)
+                .get(vb);
+
+        /**
+         * 投影矩阵
+         * 3.camera coordinates ——[projection matrix]——>> homogeneous coordinates
+         *
+         * clip = projection * view * model * local （注意：在着色器中 顺序不能变，需要从右往左乘上每个矩阵，因为
+         * 每个矩阵被运算的顺序是相反。最后的顶点应该被赋予顶点着色器中的gl_Position且OpenGL将会自动进行透视划分和裁剪）
+         */
+        new Matrix4f().perspective((float) Math.toRadians(45.0f), 4f/3f, 0.1f, 100.0f).get(pb);
+
+        gl.glUniformMatrix4fv(mat4MLoc, 1, false, mb);
+        gl.glUniformMatrix4fv(mat4VLoc, 1, false, vb);
+        gl.glUniformMatrix4fv(mat4PLoc, 1, false, pb);
 
         // 绘制三角形
         //绑定VAO
         gl.glBindVertexArray(VAO[0]);
         //要注意的是，我们传递了GL_ELEMENT_ARRAY_BUFFER当作缓冲目标。最后一件要做的事是用glDrawElements来替换glDrawArrays函数，
         //来指明我们从索引缓冲渲染。使用glDrawElements时，我们会使用当前绑定的索引缓冲对象中的索引进行绘制：
-        gl.glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        //gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 36);
-        /**
-         * 第一个参数指定了我们绘制的模式，这个和glDrawArrays的一样。第二个参数是我们打算绘制顶点的个数，这里填6，也就是说我们一共
-         * 需要绘制6个顶点。第三个参数是索引的类型，这里是GL_UNSIGNED_INT。最后一个参数里我们可以指定EBO中的偏移量（或者传递一个索
-         * 引数组，但是这是当你不在使用索引缓冲对象的时候），但是我们会在这里填写0。
-         */
+        //gl.glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //// 12*3 indices starting at 0 -> 12 triangles -> 6 squares
+        gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 12 * 3);
         //解绑VAO
         gl.glBindVertexArray(0);
+
+
+        ////加载当前矩阵为单位矩阵
+        //gl.glLoadIdentity();
+        //
+        ////如果是正交视图，无需移动视角与模型的相对位置进行缩放，另有方法进行缩放
+        //if (ortho) {
+        //    gl.glTranslated(0.0, 0.0, -350.0);
+        //}
+        ////如果是透视视图，依靠近大远小的效果改变视角与模型距离即可实现模型的缩放
+        //else {
+        //    gl.glTranslated(0.0, 0.0, -350.0 / scale);
+        //}
+        ////绕X轴旋转
+        //gl.glRotated(rotate[0], 1.0, 0.0, 0.0);
+        ////绕Z轴旋转
+        //gl.glRotated(rotate[1], 0.0, 0.0, 1.0);
+        //gl.glTranslated(translate[0], translate[1], translate[2]);
+
+        drawPlatform(gl);
+
+        //gl.glPopMatrix();
+
+        gl.glReadBuffer(GL.GL_FRONT);
+        gl.glReadPixels(0, 0, width, height, GL.GL_BGRA, GL.GL_UNSIGNED_BYTE,
+                imageBufferRGB8);
+        pxWriter.setPixels(0, 0, width, height,
+                pxFormat, imageBufferRGB8,
+                width * 4);
     }
 
     @Override
@@ -198,63 +330,103 @@ public class GLEventImpl implements GLEventListener {
 
     @Override
     public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
-        System.out.println("Window resized to width=" + width + " height=" + height);
-        // Get gl
-        GL2 gl = drawable.getGL().getGL2();
-
-        // Optional: Set viewport
-        // Render to a square at the center of the window.
-        gl.glViewport((width-height)/2,0,height,height);
+        System.out.println("reshape" + width + " " + height);
+        //get the OpenGL 2 graphics object
+        final GL2 gl = drawable.getGL().getGL2();
+        //preventing devided by 0 exception
+        if (height <= 0) {
+            height = 1;
+        }
+        double fAspect = (double) width / height;
+        // display area to cover the entire window
+        gl.glViewport(0, 0, width, height);
+        //transforming projection matrix
+        gl.glMatrixMode(GL2.GL_PROJECTION);
+        gl.glLoadIdentity();
+        //正交视图
+        if (ortho) {
+            double nRange = 80.0 / scale;
+            if (width <= height) {
+                //正交视图范围 (left,right,bottom,top,near,far)
+                gl.glOrtho(-nRange, nRange, -nRange / fAspect, nRange / fAspect, 1, 2000);
+            } else {
+                gl.glOrtho(-nRange * fAspect, nRange * fAspect, -nRange, nRange, 1, 2000);
+            }
+        }
+        //透视视图
+        else {
+            glu.gluPerspective(25.0f, fAspect, 1.0f, 2000.0f);
+        }
+        //transforming model view
+        gl.glMatrixMode(GL2.GL_MODELVIEW);
+        gl.glLoadIdentity();
     }
 
-    /* Introducing projection matrix helper functions
-     *
-     * OpenGL ES 2 vertex projection transformations gets applied inside the
-     * vertex shader, all you have to do are to calculate and supply a projection matrix.
-     *
-     * Its recomended to use the com/jogamp/opengl/util/PMVMatrix.java
-     * import com.jogamp.opengl.util.PMVMatrix;
-     * To simplify all your projection model view matrix creation needs.
-     *
-     * These helpers here are based on PMVMatrix code and common linear
-     * algebra for matrix multiplication, translate and rotations.
-     */
-    private void glMultMatrixf(FloatBuffer a, FloatBuffer b, FloatBuffer d) {
-        final int aP = a.position();
-        final int bP = b.position();
-        final int dP = d.position();
-        for (int i = 0; i < 4; i++) {
-            final float ai0 = a.get(aP + i + 0 * 4), ai1 = a.get(aP + i + 1 * 4), ai2 = a.get(aP + i + 2 * 4), ai3 = a.get(aP + i + 3 * 4);
-            d.put(dP + i + 0 * 4, ai0 * b.get(bP + 0 + 0 * 4) + ai1 * b.get(bP + 1 + 0 * 4) + ai2 * b.get(bP + 2 + 0 * 4) + ai3 * b.get(bP + 3 + 0 * 4));
-            d.put(dP + i + 1 * 4, ai0 * b.get(bP + 0 + 1 * 4) + ai1 * b.get(bP + 1 + 1 * 4) + ai2 * b.get(bP + 2 + 1 * 4) + ai3 * b.get(bP + 3 + 1 * 4));
-            d.put(dP + i + 2 * 4, ai0 * b.get(bP + 0 + 2 * 4) + ai1 * b.get(bP + 1 + 2 * 4) + ai2 * b.get(bP + 2 + 2 * 4) + ai3 * b.get(bP + 3 + 2 * 4));
-            d.put(dP + i + 3 * 4, ai0 * b.get(bP + 0 + 3 * 4) + ai1 * b.get(bP + 1 + 3 * 4) + ai2 * b.get(bP + 2 + 3 * 4) + ai3 * b.get(bP + 3 + 3 * 4));
+    public static void resetTranslate() {
+        translate[0] = -24;
+        translate[1] = -14;
+        translate[2] = -30;
+    }
+
+    public static void enlarge() {
+        if (scale < maxscale) {
+            scale *= 1.1;
         }
     }
 
-    private float[] multiply(float[] a,float[] b){
-        float[] tmp = new float[16];
-        glMultMatrixf(FloatBuffer.wrap(a),FloatBuffer.wrap(b),FloatBuffer.wrap(tmp));
-        return tmp;
+    public static void small() {
+        if (scale > minscale) {
+            scale /= 1.1;
+        }
     }
 
-    private float[] translate(float[] m,float x,float y,float z){
-        float[] t = { 1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f,
-                x, y, z, 1.0f };
-        return multiply(m, t);
+    public static void rotateZ(double degree) {
+        rotate[1] += degree;
+        while (rotate[1] >= 360) {
+            rotate[1] -= 360;
+        }
+        while (rotate[1] < 0) {
+            rotate[1] += 360;
+        }
     }
 
-    private float[] rotate(float[] m,float a,float x,float y,float z){
-        float s, c;
-        s = (float)Math.sin(Math.toRadians(a));
-        c = (float)Math.cos(Math.toRadians(a));
-        float[] r = {
-                x * x * (1.0f - c) + c,     y * x * (1.0f - c) + z * s, x * z * (1.0f - c) - y * s, 0.0f,
-                x * y * (1.0f - c) - z * s, y * y * (1.0f - c) + c,     y * z * (1.0f - c) + x * s, 0.0f,
-                x * z * (1.0f - c) + y * s, y * z * (1.0f - c) - x * s, z * z * (1.0f - c) + c,     0.0f,
-                0.0f, 0.0f, 0.0f, 1.0f };
-        return multiply(m, r);
+    public static void rotateX(double degree) {
+        rotate[0] += degree;
+        while (rotate[0] >= 360) {
+            rotate[0] -= 360;
+        }
+        while (rotate[0] < 0) {
+            rotate[0] += 360;
+        }
+    }
+
+    public static void drawPlatform(GL2 gl) {
+        drawColorAxis(gl);
+        //drawFloor(gl);
+        //drawOrigin(gl);
+    }
+
+    private static void drawColorAxis(GL2 gl) {
+        //范围框
+        gl.glLineWidth((float) (4.0 * GLEventImpl.scale));
+
+        gl.glBegin(GL2.GL_LINES);
+
+        //x-red
+        gl.glColor3d(1, 0, 0.2);
+        gl.glVertex3d(0, 0, 0);
+        gl.glVertex3d(48, 0, 0);
+        //y-green
+        //gl.glBegin(GL2.GL_LINES);
+        gl.glColor3d(0, 0.5, 0);
+        gl.glVertex3d(0, 0, 0);
+        gl.glVertex3d(0, 27, 0);
+        //z-blue
+        //gl.glBegin(GL2.GL_LINES);
+        gl.glColor3d(0, 0.0, 1);
+        gl.glVertex3d(0, 0, 0);
+        gl.glVertex3d(0, 0, 60);
+
+        gl.glEnd();
     }
 }
