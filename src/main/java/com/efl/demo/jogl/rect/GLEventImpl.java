@@ -20,9 +20,10 @@ import static com.jogamp.opengl.GL.*;
  */
 public class GLEventImpl extends Canvas implements GLEventListener {
     //着色器程序对象(Shader Program Object)
-    private int shaderProgram;
+    private int shaderProgram, lightProgram;
     private int VBO[] = new int[1];
     private int VAO[] = new int[1];
+    private int lightVAO[] = new int[1];
     //索引缓冲对象(Element Buffer Object，EBO，也叫Index Buffer Object，IBO)。和顶点缓冲对象VBO一样，EBO也是一个缓冲，
     //它专门储存索引，OpenGL调用这些顶点的索引来决定该绘制哪个顶点。
     private int EBO[] = new int[1];
@@ -135,6 +136,9 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         shaderProgram = ShaderUtils.createShaderProgram(gl,
                 "E:\\Aazd-Home\\myStudySpace\\javaxFxLearn\\custom\\src\\main\\resources\\shaders\\3\\elementVS.glsl",
                 "E:\\Aazd-Home\\myStudySpace\\javaxFxLearn\\custom\\src\\main\\resources\\shaders\\3\\elementFS.glsl");
+        lightProgram = ShaderUtils.createShaderProgram(gl,
+                "E:\\Aazd-Home\\myStudySpace\\javaxFxLearn\\custom\\src\\main\\resources\\shaders\\3\\lightVS.glsl",
+                "E:\\Aazd-Home\\myStudySpace\\javaxFxLearn\\custom\\src\\main\\resources\\shaders\\3\\lightFS.glsl");
 
         //Get a id number to the uniform_Projection matrix
         //so that we can update it.
@@ -173,12 +177,23 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //gl.glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiBuf.limit() * 4L, indiBuf, GL_STATIC_DRAW);
         // 3.2 设置顶点属性指针
         //位置属性
-        gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 3 * 4, 0);
+        gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
         gl.glEnableVertexAttribArray(0);
         //4. 解绑VAO
         gl.glBindVertexArray(0);
         //【通常情况下当我们配置好OpenGL对象以后要解绑它们，这样我们才不会在其它地方错误地配置它们】
 
+        //创建lightVAO对象
+        gl.glGenVertexArrays(lightVAO.length, lightVAO, 0);
+        gl.glBindVertexArray(lightVAO[0]);
+        // 只需要绑定VBO不用再次设置VBO的数据，因为容器(物体)的VBO数据中已经包含了正确的立方体顶点数据
+        gl.glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+        // 设置灯立方体的顶点属性指针(仅设置灯的顶点数据)
+        gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
+        gl.glEnableVertexAttribArray(0);
+        gl.glBindVertexArray(0);
+        //既然我们已经创建了表示灯和被照物体的立方体，我们只需要再定义一个东西就行了了，那就是片段着色器:这个片段着色器接受两个分别
+        //表示物体颜色和光源颜色的uniform变量,然后将光源的颜色与物体(能反射)的颜色相乘。接下来让我们把物体的颜色设置为珊瑚红并把光源设置为白色：
 
 
         //开启混合功能
@@ -229,16 +244,21 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         // 清空颜色缓冲
         gl.glClearDepth(1.0);
         gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
-
         // 记得激活着色器
         //调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象。
         //在glUseProgram函数调用之后，每个着色器调用和渲染调用都会使用这个程序对象（也就是之前写的着色器)了
         gl.glUseProgram(shaderProgram);
 
+        // 在此之前不要忘记首先'使用'对应的着色器程序(来设定uniform)
+        int objectColorLoc = gl.glGetUniformLocation(shaderProgram, "objectColor");
+        int lightColorLoc  = gl.glGetUniformLocation(shaderProgram, "lightColor");
+        gl.glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);// 我们所熟悉的珊瑚红
+        gl.glUniform3f(lightColorLoc,  1.0f, 1.0f, 1.0f); // 依旧把光源设置为白色
+
         // Get their uniform location
-        int mat4MLoc = gl.glGetUniformLocation(shaderProgram, "model");
-        int mat4VLoc = gl.glGetUniformLocation(shaderProgram, "view");
-        int mat4PLoc = gl.glGetUniformLocation(shaderProgram, "projection");
+        int modelLoc = gl.glGetUniformLocation(shaderProgram, "model");
+        int viewLoc = gl.glGetUniformLocation(shaderProgram, "view");
+        int projLoc = gl.glGetUniformLocation(shaderProgram, "projection");
 
         FloatBuffer mb = Buffers.newDirectFloatBuffer(16);
         FloatBuffer vb = Buffers.newDirectFloatBuffer(16);
@@ -249,26 +269,54 @@ public class GLEventImpl extends Canvas implements GLEventListener {
          * 1.model coordinates ——[model matrix]——>> world coordinates
          * 通过将顶点坐标乘以下面的模型矩阵我们将该顶点坐标转换到世界坐标
          */
+        ////加载当前矩阵为单位矩阵
         Matrix4f matrix4f = new Matrix4f();
         matrix4f.identity();
-        matrix4f.rotate(-55.0f, 1.0f, 0.0f, 0.0f).get(mb);
+        //matrix4f.rotate(-45f, 1.0f, 0.0f, 0.0f).get(mb);
+        //matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(mb);
         //matrix4f.rotate(rotate[0], 1.0f, 0.0f, 0.0f).get(mb);
         //matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(mb);
-        //matrix4f.translate(0.0f, 0.2f, -1.0f/scale).get(mb);
+        new Matrix4f().translate(0.0f, 0.2f, -1.0f).get(mb);
         /**
          * 观察矩阵
          * 2.world coordinates ——[view matrix]——>> camera coordinates
          */
-        new Matrix4f()
-                // 注意，我们将矩阵向我们要进行移动场景的反向移动
-                .translate(0.0f, 0.0f, -3.0f / scale)
-                .lookAt( // the position of your camera, in world space
-                        0.0f, 0.0f, -3.0f, //Camera is at (0,0,3), in World Space
-                        // where you want to look at, in world space
-                        0.0f, 0.0f, 0.0f, //and looks at the origin
-                        // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
-                        0.0f, 1.0f, 0.0f) //Head is up (set to 0,-1,0 to look upside-down)
-                .get(vb);
+        //new Matrix4f()
+        //        // 注意，我们将矩阵向我们要进行移动场景的反向移动
+        //        .translate(0.0f, 0.0f, -1.0f / scale)
+        //        .rotate(rotate[0], 1.0f, 0.0f, 0.0f)
+        //        .rotate(rotate[1], 0.0f, 0.0f, 1.0f)
+        //        .lookAt( // the position of your camera, in world space
+        //                0.0f, 0.0f, -3.0f, //Camera is at (0,0,3), in World Space
+        //                // where you want to look at, in world space
+        //                0.0f, 0.0f, 0.0f, //and looks at the origin
+        //                // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
+        //                0.0f, 1.0f, 0.0f) //Head is up (set to 0,-1,0 to look upside-down)
+        //        .get(vb);
+
+        //
+        ////如果是正交视图，无需移动视角与模型的相对位置进行缩放，另有方法进行缩放
+        if (ortho) {
+            //gl.glTranslated(0.0, 0.0, -350.0);
+            matrix4f.translate(0.0f, 0.0f, -10.0f).get(vb);
+        }
+        ////如果是透视视图，依靠近大远小的效果改变视角与模型距离即可实现模型的缩放
+        else {
+            //gl.glTranslated(0.0, 0.0, -350.0 / scale);
+            matrix4f.translate(0.0f, 0.0f, -10.0f /scale).get(vb);
+        }
+        ////绕X轴旋转
+        matrix4f.rotate(rotate[0], 1.0f, 0.0f, 0.0f).get(vb);
+        ////绕Z轴旋转
+        matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(vb);
+        //matrix4f.translate(translate[0], translate[1], translate[2]).get(vb);
+
+        matrix4f.lookAt( // the position of your camera, in world space
+                                0.0f, 0.0f, -1.0f, //Camera is at (0,0,3), in World Space
+                                // where you want to look at, in world space
+                                0.0f, 0.0f, 0.0f, //and looks at the origin
+                                // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
+                                0.0f, -1.0f, 0.0f).get(vb); //Head is up (set to 0,-1,0 to look upside-down)
 
         /**
          * 投影矩阵
@@ -278,10 +326,9 @@ public class GLEventImpl extends Canvas implements GLEventListener {
          * 每个矩阵被运算的顺序是相反。最后的顶点应该被赋予顶点着色器中的gl_Position且OpenGL将会自动进行透视划分和裁剪）
          */
         new Matrix4f().perspective((float) Math.toRadians(45.0f), 4f/3f, 0.1f, 100.0f).get(pb);
-
-        gl.glUniformMatrix4fv(mat4MLoc, 1, false, mb);
-        gl.glUniformMatrix4fv(mat4VLoc, 1, false, vb);
-        gl.glUniformMatrix4fv(mat4PLoc, 1, false, pb);
+        gl.glUniformMatrix4fv(modelLoc, 1, false, mb);
+        gl.glUniformMatrix4fv(viewLoc, 1, false, vb);
+        gl.glUniformMatrix4fv(projLoc  , 1, false, pb);
 
         // 绘制三角形
         //绑定VAO
@@ -294,6 +341,22 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //解绑VAO
         gl.glBindVertexArray(0);
 
+        gl.glUseProgram(lightProgram);
+        FloatBuffer lmb = Buffers.newDirectFloatBuffer(16);
+        // Get location objects for the matrices on the lamp shader (these could be different on a different shader)
+        modelLoc = gl.glGetUniformLocation(lightProgram, "model");
+        viewLoc  = gl.glGetUniformLocation(lightProgram, "view");
+        projLoc  = gl.glGetUniformLocation(lightProgram, "projection");
+        // Set matrices
+        gl.glUniformMatrix4fv(viewLoc, 1, false, vb);
+        gl.glUniformMatrix4fv(projLoc, 1,false, pb);
+        new Matrix4f().translate(1.2f, 1.0f, 2.0f).get(lmb);
+        new Matrix4f().scale(0.2f).get(lmb);
+        gl.glUniformMatrix4fv(modelLoc, 1, false, lmb);
+        // Draw the light object (using light's vertex attributes)
+        gl.glBindVertexArray(lightVAO[0]);
+        gl.glDrawArrays(GL_TRIANGLES, 0, 36);
+        gl.glBindVertexArray(0);
 
         ////加载当前矩阵为单位矩阵
         //gl.glLoadIdentity();
