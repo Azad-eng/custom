@@ -11,7 +11,6 @@ import org.joml.Matrix4f;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 
 import static com.jogamp.opengl.GL.*;
 
@@ -24,27 +23,16 @@ public class GLEventImpl extends Canvas implements GLEventListener {
     private int VBO[] = new int[1];
     private int VAO[] = new int[1];
     private int lightVAO[] = new int[1];
-    //索引缓冲对象(Element Buffer Object，EBO，也叫Index Buffer Object，IBO)。和顶点缓冲对象VBO一样，EBO也是一个缓冲，
-    //它专门储存索引，OpenGL调用这些顶点的索引来决定该绘制哪个顶点。
-    private int EBO[] = new int[1];
-    private static final PixelFormat<ByteBuffer> pxFormat = PixelFormat.getByteBgraInstance();
+    private int screenWidth = 1920;
+    private int screenHeight = 1080;
     public static float scale = 1.0f, maxscale = 20.0f, minscale = 0.2f;
     public static float[] rotate = {-45.0f, 45.0f};
     public static float[] translate = {-24f, -14f, -30f};
-    public static float[] position = {0f, 0f, 5f};
-    // horizontal angle : toward -Z
-    float horizontalAngle = 3.14f;
-    // vertical angle : 0, look at the horizon
-    float verticalAngle = 0.0f;
-    // Initial Field of View
-    float initialFoV = 45.0f;
-    float speed = 3.0f; // 3 units / second
-    float mouseSpeed = 0.005f;
+    public static float[] lightPos = {20f, 30f, 50f};
+    public static float[][] cubePositions = {{0.0f,  0.0f,  0.0f},{2.0f,  5.0f, -5.0f}, {-1.5f, -2.2f, -2.5f}};
     public static boolean ortho = false;
     private GLU glu = new GLU();
-    //加载并创建贴图
-    int[] texture1 = new int[1];
-    int[] texture2 = new int[1];
+    private static final PixelFormat<ByteBuffer> pxFormat = PixelFormat.getByteBgraInstance();
     float[] vertices = {
             //坐标                //法线向量
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -96,12 +84,10 @@ public class GLEventImpl extends Canvas implements GLEventListener {
     private FloatBuffer vertBuf = Buffers.newDirectFloatBuffer(vertices);
     //private IntBuffer indiBuf = Buffers.newDirectIntBuffer(indices);
     private PixelWriter pxWriter;
-    private int width = 1200;
-    private int height = 900;
     private ByteBuffer imageBufferRGB8;
 
-    public GLEventImpl(int width, int height, PixelWriter pxWriter) {
-        setBounds(width, height);
+    public GLEventImpl(int screenWidth, int screenHeight, PixelWriter pxWriter) {
+        setBounds(screenWidth, screenHeight);
         setPxWriter(pxWriter);
     }
 
@@ -111,8 +97,8 @@ public class GLEventImpl extends Canvas implements GLEventListener {
 
     public void setBounds(int width, int height) {
         if (width > 0 && height > 0) {
-            this.width = width;
-            this.height = height;
+            this.screenWidth = width;
+            this.screenHeight = height;
             imageBufferRGB8 = Buffers.newDirectByteBuffer(4 * width * height);
         }
     }
@@ -128,7 +114,7 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //gl.glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiBuf.limit() * 4L, indiBuf, GL_STATIC_DRAW);
 
         //生成VBO对象
-        gl.glGenBuffers(this.VBO.length, this.VBO, 0);
+        gl.glGenBuffers(VBO.length, VBO, 0);
         gl.glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
         gl.glBufferData(GL_ARRAY_BUFFER, vertBuf.limit() * 4L, vertBuf, GL_STATIC_DRAW);
 
@@ -198,7 +184,6 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //既然我们已经创建了表示灯和被照物体的立方体，我们只需要再定义一个东西就行了了，那就是片段着色器:这个片段着色器接受两个分别
         //表示物体颜色和光源颜色的uniform变量,然后将光源的颜色与物体(能反射)的颜色相乘。接下来让我们把物体的颜色设置为珊瑚红并把光源设置为白色：
 
-
         //开启混合功能
         //gl.glEnable(GL2.GL_BLEND);
         //透明计算函数设置
@@ -234,8 +219,6 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //启用材质的颜色跟踪
         //gl.glEnable(GL2.GL_COLOR_MATERIAL);
         //gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
-
-
     }
 
     @Override
@@ -256,9 +239,9 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         int objectColorLoc = gl.glGetUniformLocation(shaderProgram, "objectColor");
         int lightColorLoc  = gl.glGetUniformLocation(shaderProgram, "lightColor");
         int lightPosLoc = gl.glGetUniformLocation(shaderProgram, "lightPos");
-        gl.glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);// 我们所熟悉的珊瑚红
-        gl.glUniform3f(lightColorLoc,  1.0f, 1.0f, 1.0f); // 依旧把光源设置为白色
-        gl.glUniform3f(lightPosLoc,  1.2f, 1.0f, 2.0f); //
+        gl.glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);// 珊瑚红
+        gl.glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f); // 依旧把光源设置为白色
+        gl.glUniform3f(lightPosLoc, lightPos[0], lightPos[1], lightPos[2]); //
 
         // Get their uniform location
         int modelLoc = gl.glGetUniformLocation(shaderProgram, "model");
@@ -278,10 +261,9 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         Matrix4f matrix4f = new Matrix4f();
         matrix4f.identity();
         //matrix4f.rotate(-45f, 1.0f, 0.0f, 0.0f).get(mb);
-        //matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(mb);
         //matrix4f.rotate(rotate[0], 1.0f, 0.0f, 0.0f).get(mb);
         //matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(mb);
-        new Matrix4f().translate(0.0f, 0.2f, -1.0f).get(mb);
+        matrix4f.translate(0.0f, 0.2f, -1.0f).get(mb);
         /**
          * 观察矩阵
          * 2.world coordinates ——[view matrix]——>> camera coordinates
@@ -342,7 +324,14 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //来指明我们从索引缓冲渲染。使用glDrawElements时，我们会使用当前绑定的索引缓冲对象中的索引进行绘制：
         //gl.glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         //// 12*3 indices starting at 0 -> 12 triangles -> 6 squares
-        gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 12 * 3);
+        for (int i = 0; i < cubePositions.length; i++) {
+            new Matrix4f()
+                    .translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2])
+                    .rotate(20.0f * i, 1.0f, 0.3f, 0.5f)
+                    .get(mb);
+            gl.glUniformMatrix4fv(modelLoc, 1, false, mb);
+            gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 12 * 3);
+        }
         //解绑VAO
         gl.glBindVertexArray(0);
 
@@ -355,8 +344,8 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         // Set matrices
         gl.glUniformMatrix4fv(viewLoc, 1, false, vb);
         gl.glUniformMatrix4fv(projLoc, 1,false, pb);
-        new Matrix4f().translate(1.2f, 1.0f, 2.0f).get(lmb);
         new Matrix4f().scale(0.2f).get(lmb);
+        new Matrix4f().translate( lightPos[0], lightPos[1], lightPos[2]).get(lmb);
         gl.glUniformMatrix4fv(modelLoc, 1, false, lmb);
         // Draw the light object (using light's vertex attributes)
         gl.glBindVertexArray(lightVAO[0]);
@@ -385,11 +374,8 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //gl.glPopMatrix();
 
         gl.glReadBuffer(GL.GL_FRONT);
-        gl.glReadPixels(0, 0, width, height, GL.GL_BGRA, GL.GL_UNSIGNED_BYTE,
-                imageBufferRGB8);
-        pxWriter.setPixels(0, 0, width, height,
-                pxFormat, imageBufferRGB8,
-                width * 4);
+        gl.glReadPixels(0, 0, screenWidth, screenHeight, GL.GL_BGRA, GL.GL_UNSIGNED_BYTE, imageBufferRGB8);
+        pxWriter.setPixels(0, 0, screenWidth, screenHeight, pxFormat, imageBufferRGB8, screenWidth * 4);
     }
 
     @Override
