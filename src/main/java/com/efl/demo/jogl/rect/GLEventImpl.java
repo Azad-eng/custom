@@ -46,55 +46,55 @@ public class GLEventImpl extends Canvas implements GLEventListener {
     int[] texture1 = new int[1];
     int[] texture2 = new int[1];
     float[] vertices = {
-            //坐标
-            -0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, -0.5f,
-            0.5f,  0.5f, -0.5f,
-            0.5f,  0.5f, -0.5f,
-            -0.5f,  0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
+            //坐标                //法线向量
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-            -0.5f, -0.5f,  0.5f,
-            0.5f, -0.5f,  0.5f,
-            0.5f,  0.5f,  0.5f,  
-            0.5f,  0.5f,  0.5f,  
-            -0.5f,  0.5f,  0.5f,  
-            -0.5f, -0.5f,  0.5f,  
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
 
-            -0.5f,  0.5f,  0.5f,
-            -0.5f,  0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,  
-            -0.5f, -0.5f, -0.5f,  
-            -0.5f, -0.5f,  0.5f,  
-            -0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-            0.5f,  0.5f,  0.5f, 
-            0.5f,  0.5f, -0.5f,  
-            0.5f, -0.5f, -0.5f,  
-            0.5f, -0.5f, -0.5f,  
-            0.5f, -0.5f,  0.5f,  
-            0.5f,  0.5f,  0.5f, 
+            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-            -0.5f, -0.5f, -0.5f,  
-            0.5f, -0.5f, -0.5f,  
-            0.5f, -0.5f,  0.5f, 
-            0.5f, -0.5f,  0.5f, 
-            -0.5f, -0.5f,  0.5f,  
-            -0.5f, -0.5f, -0.5f,  
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
 
-            -0.5f,  0.5f, -0.5f,  
-            0.5f,  0.5f, -0.5f,  
-            0.5f,  0.5f,  0.5f, 
-            0.5f,  0.5f,  0.5f, 
-            -0.5f,  0.5f,  0.5f,
-            -0.5f,  0.5f, -0.5f
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
     };
-    int[] indices = {
-            0, 1, 3, // 第一个三角形
-            1, 2, 3  // 第二个三角形
-    };
+    //int[] indices = {
+    //        0, 1, 3, // 第一个三角形
+    //        1, 2, 3  // 第二个三角形
+    //};
     private FloatBuffer vertBuf = Buffers.newDirectFloatBuffer(vertices);
-    private IntBuffer indiBuf = Buffers.newDirectIntBuffer(indices);
+    //private IntBuffer indiBuf = Buffers.newDirectIntBuffer(indices);
     private PixelWriter pxWriter;
     private int width = 1200;
     private int height = 900;
@@ -121,11 +121,11 @@ public class GLEventImpl extends Canvas implements GLEventListener {
     public void init(GLAutoDrawable drawable) {
         GL2 gl = drawable.getGL().getGL2();
         //生成EBO对象
-        gl.glGenBuffers(this.EBO.length, this.EBO, 0);
+        //gl.glGenBuffers(this.EBO.length, this.EBO, 0);
         //与VBO类似，我们先绑定EBO然后用glBufferData把索引复制到缓冲里。同样，和VBO类似，
         //我们会把这些函数调用放在绑定和解绑函数调用之间，只不过这次我们把缓冲的类型定义为GL_ELEMENT_ARRAY_BUFFER
-        gl.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
-        gl.glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiBuf.limit() * 4L, indiBuf, GL_STATIC_DRAW);
+        //gl.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
+        //gl.glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiBuf.limit() * 4L, indiBuf, GL_STATIC_DRAW);
 
         //生成VBO对象
         gl.glGenBuffers(this.VBO.length, this.VBO, 0);
@@ -177,8 +177,11 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //gl.glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiBuf.limit() * 4L, indiBuf, GL_STATIC_DRAW);
         // 3.2 设置顶点属性指针
         //位置属性
-        gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
+        gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * 4, 0);
         gl.glEnableVertexAttribArray(0);
+        //法向量属性
+        gl.glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * 4, 3 * 4);
+        gl.glEnableVertexAttribArray(1);
         //4. 解绑VAO
         gl.glBindVertexArray(0);
         //【通常情况下当我们配置好OpenGL对象以后要解绑它们，这样我们才不会在其它地方错误地配置它们】
@@ -189,7 +192,7 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         // 只需要绑定VBO不用再次设置VBO的数据，因为容器(物体)的VBO数据中已经包含了正确的立方体顶点数据
         gl.glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
         // 设置灯立方体的顶点属性指针(仅设置灯的顶点数据)
-        gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
+        gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * 4, 0);
         gl.glEnableVertexAttribArray(0);
         gl.glBindVertexArray(0);
         //既然我们已经创建了表示灯和被照物体的立方体，我们只需要再定义一个东西就行了了，那就是片段着色器:这个片段着色器接受两个分别
@@ -197,10 +200,10 @@ public class GLEventImpl extends Canvas implements GLEventListener {
 
 
         //开启混合功能
-        gl.glEnable(GL2.GL_BLEND);
+        //gl.glEnable(GL2.GL_BLEND);
         //透明计算函数设置
-        gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
-        gl.glBlendEquation(GL.GL_FUNC_ADD);
+        //gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+        //gl.glBlendEquation(GL.GL_FUNC_ADD);
         //开启对线\多边形的抗锯齿功能
         //gl.glEnable(GL.GL_LINE_SMOOTH);
         //gl.glEnable(GL2.GL_POLYGON_SMOOTH);
@@ -208,31 +211,30 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         gl.glEnable(GL2.GL_DEPTH_TEST);
 
         //LESS+EQUAL如果目标像素z值<＝当前像素z值，则绘制目标像素
-        gl.glDepthFunc(GL2.GL_LEQUAL);
-        gl.glEnable(GL.GL_MULTISAMPLE);
+        //gl.glDepthFunc(GL2.GL_LEQUAL);
+        //gl.glEnable(GL.GL_MULTISAMPLE);
         ///gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
-        gl.glShadeModel(GL2.GL_SMOOTH);
-        gl.glDepthRange(0.0, 1.0);
+        //gl.glShadeModel(GL2.GL_SMOOTH);
+        //gl.glDepthRange(0.0, 1.0);
 
         float[] whiteLight = {0.45f, 0.45f, 0.45f, 1.0f};
         float[] sourceLight = {0.30f, 0.30f, 0.30f, 1.0f};
         float[] lightPos = {-150f, 25f, 50f, 0.0f};
 
-        gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, whiteLight, 0);
-        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_AMBIENT, sourceLight, 0);
+        //gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, whiteLight, 0);
+        //gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_AMBIENT, sourceLight, 0);
         //漫反射光颜色：光线直接射到物体表面的颜色
-        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, sourceLight, 0);
+        //gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, sourceLight, 0);
         //位置属性
-        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, lightPos, 0);
+        //gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, lightPos, 0);
         //启用照明模式
-        gl.glEnable(GL2.GL_LIGHTING);
+        //gl.glEnable(GL2.GL_LIGHTING);
         //打开第一个灯光
-        gl.glEnable(GL2.GL_LIGHT0);
+        //gl.glEnable(GL2.GL_LIGHT0);
         //启用材质的颜色跟踪
-        gl.glEnable(GL2.GL_COLOR_MATERIAL);
-        gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
+        //gl.glEnable(GL2.GL_COLOR_MATERIAL);
+        //gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
 
-        gl.glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
 
     }
 
@@ -242,7 +244,8 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         final GL2 gl = drawable.getGL().getGL2();
         // 渲染
         // 清空颜色缓冲
-        gl.glClearDepth(1.0);
+        //gl.glClearDepth(1.0);
+        gl.glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
         gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
         // 记得激活着色器
         //调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象。
@@ -252,8 +255,10 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         // 在此之前不要忘记首先'使用'对应的着色器程序(来设定uniform)
         int objectColorLoc = gl.glGetUniformLocation(shaderProgram, "objectColor");
         int lightColorLoc  = gl.glGetUniformLocation(shaderProgram, "lightColor");
+        int lightPosLoc = gl.glGetUniformLocation(shaderProgram, "lightPos");
         gl.glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);// 我们所熟悉的珊瑚红
         gl.glUniform3f(lightColorLoc,  1.0f, 1.0f, 1.0f); // 依旧把光源设置为白色
+        gl.glUniform3f(lightPosLoc,  1.2f, 1.0f, 2.0f); //
 
         // Get their uniform location
         int modelLoc = gl.glGetUniformLocation(shaderProgram, "model");
