@@ -29,7 +29,7 @@ public class GLEventImpl extends Canvas implements GLEventListener {
     public static float[] rotate = {-45.0f, 45.0f};
     public static float[] translate = {-24f, -14f, -30f};
     public static float[] lightPos = {20f, 30f, 50f};
-    public static float[][] cubePositions = {{0.0f,  0.0f,  0.0f},{2.0f,  5.0f, -5.0f}, {-1.5f, -2.2f, -2.5f}};
+    public static float[][] cubePositions = {{0.0f,  0.0f,  0.0f}};
     public static boolean ortho = false;
     private GLU glu = new GLU();
     private static final PixelFormat<ByteBuffer> pxFormat = PixelFormat.getByteBgraInstance();
@@ -85,6 +85,10 @@ public class GLEventImpl extends Canvas implements GLEventListener {
     //private IntBuffer indiBuf = Buffers.newDirectIntBuffer(indices);
     private PixelWriter pxWriter;
     private ByteBuffer imageBufferRGB8;
+    private static Camera camera;
+    private static float deltaTime = 0.0f;
+    private float lastFrame = 0.0f;
+    private static int direction = 0;
 
     public GLEventImpl(int screenWidth, int screenHeight, PixelWriter pxWriter) {
         setBounds(screenWidth, screenHeight);
@@ -103,9 +107,19 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         }
     }
 
+    public static void doMovement(int direction){
+        GLEventImpl.direction = direction;
+        doMovement();
+    }
+    public static void doMovement(){
+        camera.ProcessKeyboard(direction, deltaTime);
+    }
+
+
     @Override
     public void init(GLAutoDrawable drawable) {
         GL2 gl = drawable.getGL().getGL2();
+        camera = new Camera(new Vector3f(0.0f, 0.0f, 3.0f));
         //生成EBO对象
         //gl.glGenBuffers(this.EBO.length, this.EBO, 0);
         //与VBO类似，我们先绑定EBO然后用glBufferData把索引复制到缓冲里。同样，和VBO类似，
@@ -192,155 +206,35 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //开启对线\多边形的抗锯齿功能
         //gl.glEnable(GL.GL_LINE_SMOOTH);
         //gl.glEnable(GL2.GL_POLYGON_SMOOTH);
+        gl.glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
         //深度测试，避免后画的始终显示在先画的上面
         gl.glEnable(GL2.GL_DEPTH_TEST);
-
-        //LESS+EQUAL如果目标像素z值<＝当前像素z值，则绘制目标像素
-        //gl.glDepthFunc(GL2.GL_LEQUAL);
-        //gl.glEnable(GL.GL_MULTISAMPLE);
-        ///gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
-        //gl.glShadeModel(GL2.GL_SMOOTH);
-        //gl.glDepthRange(0.0, 1.0);
-
-        float[] whiteLight = {0.45f, 0.45f, 0.45f, 1.0f};
-        float[] sourceLight = {0.30f, 0.30f, 0.30f, 1.0f};
-        float[] lightPos = {-150f, 25f, 50f, 0.0f};
-
-        //gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, whiteLight, 0);
-        //gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_AMBIENT, sourceLight, 0);
-        //漫反射光颜色：光线直接射到物体表面的颜色
-        //gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, sourceLight, 0);
-        //位置属性
-        //gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, lightPos, 0);
-        //启用照明模式
-        //gl.glEnable(GL2.GL_LIGHTING);
-        //打开第一个灯光
-        //gl.glEnable(GL2.GL_LIGHT0);
-        //启用材质的颜色跟踪
-        //gl.glEnable(GL2.GL_COLOR_MATERIAL);
-        //gl.glColorMaterial(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE);
     }
 
     @Override
     public void display(GLAutoDrawable drawable) {
+        float currentFrame = System.currentTimeMillis();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        //doMovement();
         // Update variables used in animation
         final GL2 gl = drawable.getGL().getGL2();
         // 渲染
         // 清空颜色缓冲
         //gl.glClearDepth(1.0);
-        gl.glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
         gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
-        // 记得激活着色器
-        //调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象。
-        //在glUseProgram函数调用之后，每个着色器调用和渲染调用都会使用这个程序对象（也就是之前写的着色器)了
-        gl.glUseProgram(shaderProgram);
 
-        // 在此之前不要忘记首先'使用'对应的着色器程序(来设定uniform)
-        int objectColorLoc = gl.glGetUniformLocation(shaderProgram, "objectColor");
-        int lightColorLoc  = gl.glGetUniformLocation(shaderProgram, "lightColor");
-        int lightPosLoc = gl.glGetUniformLocation(shaderProgram, "lightPos");
-        gl.glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);// 珊瑚红
-        gl.glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f); // 依旧把光源设置为白色
-        gl.glUniform3f(lightPosLoc, lightPos[0], lightPos[1], lightPos[2]); //
-
-        // Get their uniform location
-        int modelLoc = gl.glGetUniformLocation(shaderProgram, "model");
-        int viewLoc = gl.glGetUniformLocation(shaderProgram, "view");
-        int projLoc = gl.glGetUniformLocation(shaderProgram, "projection");
-
+        // Get location objects for the matrices on the lamp shader (these could be different on a different shader)
+        int modelLoc = gl.glGetUniformLocation(lightProgram, "model");
+        int viewLoc  = gl.glGetUniformLocation(lightProgram, "view");
+        int projLoc  = gl.glGetUniformLocation(lightProgram, "projection");
+        FloatBuffer lmb = Buffers.newDirectFloatBuffer(16);
         FloatBuffer mb = Buffers.newDirectFloatBuffer(16);
         FloatBuffer vb = Buffers.newDirectFloatBuffer(16);
         FloatBuffer pb = Buffers.newDirectFloatBuffer(16);
 
-        /**
-         * 模型矩阵
-         * 1.model coordinates ——[model matrix]——>> world coordinates
-         * 通过将顶点坐标乘以下面的模型矩阵我们将该顶点坐标转换到世界坐标
-         */
-        ////加载当前矩阵为单位矩阵
-        Matrix4f matrix4f = new Matrix4f();
-        matrix4f.identity();
-        //matrix4f.rotate(-45f, 1.0f, 0.0f, 0.0f).get(mb);
-        //matrix4f.rotate(rotate[0], 1.0f, 0.0f, 0.0f).get(mb);
-        //matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(mb);
-        matrix4f.translate(0.0f, 0.2f, -1.0f).get(mb);
-        /**
-         * 观察矩阵
-         * 2.world coordinates ——[view matrix]——>> camera coordinates
-         */
-        //new Matrix4f()
-        //        // 注意，我们将矩阵向我们要进行移动场景的反向移动
-        //        .translate(0.0f, 0.0f, -1.0f / scale)
-        //        .rotate(rotate[0], 1.0f, 0.0f, 0.0f)
-        //        .rotate(rotate[1], 0.0f, 0.0f, 1.0f)
-        //        .lookAt( // the position of your camera, in world space
-        //                0.0f, 0.0f, -3.0f, //Camera is at (0,0,3), in World Space
-        //                // where you want to look at, in world space
-        //                0.0f, 0.0f, 0.0f, //and looks at the origin
-        //                // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
-        //                0.0f, 1.0f, 0.0f) //Head is up (set to 0,-1,0 to look upside-down)
-        //        .get(vb);
-
-        //
-        ////如果是正交视图，无需移动视角与模型的相对位置进行缩放，另有方法进行缩放
-        if (ortho) {
-            //gl.glTranslated(0.0, 0.0, -350.0);
-            matrix4f.translate(0.0f, 0.0f, -10.0f).get(vb);
-        }
-        ////如果是透视视图，依靠近大远小的效果改变视角与模型距离即可实现模型的缩放
-        else {
-            //gl.glTranslated(0.0, 0.0, -350.0 / scale);
-            matrix4f.translate(0.0f, 0.0f, -10.0f /scale).get(vb);
-        }
-        ////绕X轴旋转
-        matrix4f.rotate(rotate[0], 1.0f, 0.0f, 0.0f).get(vb);
-        ////绕Z轴旋转
-        matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(vb);
-        //matrix4f.translate(translate[0], translate[1], translate[2]).get(vb);
-
-        matrix4f.lookAt( // the position of your camera, in world space
-                                0.0f, 0.0f, -1.0f, //Camera is at (0,0,3), in World Space
-                                // where you want to look at, in world space
-                                0.0f, 0.0f, 0.0f, //and looks at the origin
-                                // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
-                                0.0f, -1.0f, 0.0f).get(vb); //Head is up (set to 0,-1,0 to look upside-down)
-
-        /**
-         * 投影矩阵
-         * 3.camera coordinates ——[projection matrix]——>> homogeneous coordinates
-         *
-         * clip = projection * view * model * local （注意：在着色器中 顺序不能变，需要从右往左乘上每个矩阵，因为
-         * 每个矩阵被运算的顺序是相反。最后的顶点应该被赋予顶点着色器中的gl_Position且OpenGL将会自动进行透视划分和裁剪）
-         */
-        new Matrix4f().perspective((float) Math.toRadians(45.0f), 4f/3f, 0.1f, 100.0f).get(pb);
-        gl.glUniformMatrix4fv(modelLoc, 1, false, mb);
-        gl.glUniformMatrix4fv(viewLoc, 1, false, vb);
-        gl.glUniformMatrix4fv(projLoc  , 1, false, pb);
-
-        // 绘制三角形
-        //绑定VAO
-        gl.glBindVertexArray(VAO[0]);
-        //要注意的是，我们传递了GL_ELEMENT_ARRAY_BUFFER当作缓冲目标。最后一件要做的事是用glDrawElements来替换glDrawArrays函数，
-        //来指明我们从索引缓冲渲染。使用glDrawElements时，我们会使用当前绑定的索引缓冲对象中的索引进行绘制：
-        //gl.glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        //// 12*3 indices starting at 0 -> 12 triangles -> 6 squares
-        for (int i = 0; i < cubePositions.length; i++) {
-            new Matrix4f()
-                    .translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2])
-                    .rotate(20.0f * i, 1.0f, 0.3f, 0.5f)
-                    .get(mb);
-            gl.glUniformMatrix4fv(modelLoc, 1, false, mb);
-            gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 12 * 3);
-        }
-        //解绑VAO
-        gl.glBindVertexArray(0);
-
+        // 记得激活着色器
         gl.glUseProgram(lightProgram);
-        FloatBuffer lmb = Buffers.newDirectFloatBuffer(16);
-        // Get location objects for the matrices on the lamp shader (these could be different on a different shader)
-        modelLoc = gl.glGetUniformLocation(lightProgram, "model");
-        viewLoc  = gl.glGetUniformLocation(lightProgram, "view");
-        projLoc  = gl.glGetUniformLocation(lightProgram, "projection");
         // Set matrices
         gl.glUniformMatrix4fv(viewLoc, 1, false, vb);
         gl.glUniformMatrix4fv(projLoc, 1,false, pb);
@@ -352,23 +246,92 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         gl.glDrawArrays(GL_TRIANGLES, 0, 36);
         gl.glBindVertexArray(0);
 
-        ////加载当前矩阵为单位矩阵
-        //gl.glLoadIdentity();
-        //
-        ////如果是正交视图，无需移动视角与模型的相对位置进行缩放，另有方法进行缩放
+        //调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象。
+        //在glUseProgram函数调用之后，每个着色器调用和渲染调用都会使用这个程序对象（也就是之前写的着色器)了
+        gl.glUseProgram(shaderProgram);
+
+        /**
+         * 观察矩阵
+         * 2.world coordinates ——[view matrix]——>> camera coordinates
+         */
+        Matrix4f matrix4f = new Matrix4f();
+        //matrix4f.identity();
         //if (ortho) {
-        //    gl.glTranslated(0.0, 0.0, -350.0);
+        //    //gl.glTranslated(0.0, 0.0, -350.0);
+        //    matrix4f.translate(0.0f, 0.0f, -350.0f).get(vb);
         //}
         ////如果是透视视图，依靠近大远小的效果改变视角与模型距离即可实现模型的缩放
         //else {
-        //    gl.glTranslated(0.0, 0.0, -350.0 / scale);
+        //    //gl.glTranslated(0.0, 0.0, -350.0 / scale);
+        //    matrix4f.translate(0.0f, 0.0f, -350.0f /scale).get(vb);
         //}
-        ////绕X轴旋转
-        //gl.glRotated(rotate[0], 1.0, 0.0, 0.0);
-        ////绕Z轴旋转
-        //gl.glRotated(rotate[1], 0.0, 0.0, 1.0);
-        //gl.glTranslated(translate[0], translate[1], translate[2]);
+        //绕X轴旋转
+        //matrix4f.rotate(rotate[0], 1.0f, 0.0f, 0.0f).get(vb);
+        //绕Z轴旋转
+        //matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(vb);
+        //matrix4f.translate(translate[0], translate[1], translate[2]).get(vb);
+        camera.getViewMatrix(matrix4f).get(vb);
+        //matrix4f.lookAt( // the position of your camera, in world space
+        //        cameraPos.x, cameraPos.y, cameraPos.z, //Camera is at (0,0,-1), in World Space
+        //        // where you want to look at, in world space
+        //        cameraPos.add(cameraFront).x, cameraPos.add(cameraFront).y, cameraPos.add(cameraFront).z, //and looks at the origin
+        //        // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
+        //        cameraUp.x, cameraUp.y, cameraUp.z).get(vb); //Head is up (set to 0,-1,0 to look upside-down)
 
+        //matrix4f.lookAt( // the position of your camera, in world space
+        //        0.0f, 0.0f, -1.0f, //Camera is at (0,0,3), in World Space
+        //        // where you want to look at, in world space
+        //        0.0f, 0.0f, 0.0f, //and looks at the origin
+        //        // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
+        //        0.0f, -1.0f, 0.0f).get(vb); //Head is up (set to 0,-1,0 to look upside-down)
+
+        /**
+         * 投影矩阵
+         * 3.camera coordinates ——[projection matrix]——>> homogeneous coordinates
+         *
+         * clip = projection * view * model * local （注意：在着色器中 顺序不能变，需要从右往左乘上每个矩阵，因为
+         * 每个矩阵被运算的顺序是相反。最后的顶点应该被赋予顶点着色器中的gl_Position且OpenGL将会自动进行透视划分和裁剪）
+         */
+        new Matrix4f().perspective(camera.zoom, 4f/3f, 0.1f, 1000.0f).get(pb);
+
+        // 在此之前不要忘记首先'使用'对应的着色器程序(来设定uniform)
+        int objectColorLoc = gl.glGetUniformLocation(shaderProgram, "objectColor");
+        int lightColorLoc  = gl.glGetUniformLocation(shaderProgram, "lightColor");
+        int lightPosLoc = gl.glGetUniformLocation(shaderProgram, "lightPos");
+        gl.glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);// 珊瑚红
+        gl.glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f); // 依旧把光源设置为白色
+        gl.glUniform3f(lightPosLoc, lightPos[0], lightPos[1], lightPos[2]); //
+
+        // Get their uniform location
+        modelLoc = gl.glGetUniformLocation(shaderProgram, "model");
+        viewLoc = gl.glGetUniformLocation(shaderProgram, "view");
+        projLoc = gl.glGetUniformLocation(shaderProgram, "projection");
+        // Pass the matrices to the shader
+        gl.glUniformMatrix4fv(viewLoc, 1, false, vb);
+        gl.glUniformMatrix4fv(projLoc  , 1, false, pb);
+
+        // 绘制三角形
+        //绑定VAO
+        gl.glBindVertexArray(VAO[0]);
+        //要注意的是，我们传递了GL_ELEMENT_ARRAY_BUFFER当作缓冲目标。最后一件要做的事是用glDrawElements来替换glDrawArrays函数，
+        //来指明我们从索引缓冲渲染。使用glDrawElements时，我们会使用当前绑定的索引缓冲对象中的索引进行绘制：
+        //gl.glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //// 12*3 indices starting at 0 -> 12 triangles -> 6 squares
+        for (int i = 0; i < cubePositions.length; i++) {
+            /**
+             * 模型矩阵
+             * 1.model coordinates ——[model matrix]——>> world coordinates
+             * 通过将顶点坐标乘以下面的模型矩阵我们将该顶点坐标转换到世界坐标
+             */
+            Matrix4f model = new Matrix4f();
+            model.translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2])
+                 //.rotate(20.0f * i, 1.0f, 0.3f, 0.5f)
+                 .get(mb);
+            gl.glUniformMatrix4fv(modelLoc, 1, false, mb);
+            gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 12 * 3);
+        }
+        //解绑VAO
+        gl.glBindVertexArray(0);
         drawPlatform(gl);
 
         //gl.glPopMatrix();
@@ -414,6 +377,10 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //transforming model view
         gl.glMatrixMode(GL2.GL_MODELVIEW);
         gl.glLoadIdentity();
+    }
+
+    public static void scrollCallback(double yoffset) {
+        camera.ProcessMouseScroll((float)yoffset);
     }
 
     public static void resetTranslate() {

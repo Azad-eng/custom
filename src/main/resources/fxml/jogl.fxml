@@ -9,7 +9,7 @@
 <?import javafx.scene.image.Image?>
 <StackPane prefHeight="522.0" prefWidth="667.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.efl.demo.jogl.rect.JOGLController">
     <ScrollPane fx:id="pane3D" minHeight="300" minWidth="300" />
-    <AnchorPane onMouseDragged="#mouseDragged" onMousePressed="#mousePressed" onScroll="#mouseScroll" prefHeight="200.0" prefWidth="200.0" stylesheets="/efl/ButtonStyle.css">
+    <AnchorPane onMouseDragged="#mouseDragged" onMousePressed="#mousePressed" onScroll="#mouseScroll" onKeyPressed="#keyPressed" prefHeight="200.0" prefWidth="200.0" stylesheets="/efl/ButtonStyle.css">
         <JFXButton layoutX="6.0" layoutY="6.0" onAction="#orthoView">
             <graphic>
                 <ImageView fx:id="orthoImage">

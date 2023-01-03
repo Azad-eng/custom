@@ -5,6 +5,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
@@ -18,6 +19,11 @@ import java.util.ResourceBundle;
 public class JOGLController implements Initializable {
     public JOGL_FxCanvas canvas;
     int x0, y0;
+    private float lastX = 320;
+    private float lastY = 240;
+    private float yaw = -90.0f;
+    private float pitch = 0.0f;
+
     @FXML
     private ScrollPane pane3D;
     @FXML
@@ -46,16 +52,40 @@ public class JOGLController implements Initializable {
         }
     }
 
+    @FXML
+    void keyPressed(KeyEvent event) {
+        switch (event.getCode()) {
+            case W:
+            case UP:
+                GLEventImpl.doMovement(0);
+                break;
+            case S:
+            case DOWN:
+                GLEventImpl.doMovement(1);
+                break;
+            case A:
+            case LEFT:
+                GLEventImpl.doMovement(2);
+                break;
+            case D:
+            case RIGHT:
+                GLEventImpl.doMovement(3);
+                break;
+        }
+        checkOrthoAndRepaint();
+        event.consume();
+    }
 
     @FXML
     void mouseScroll(ScrollEvent event) {
         //DeltaY会产生响应
         double wheel = event.getDeltaY();
-        if (wheel > 0) {
-            GLEventImpl.small();
-        } else if (wheel < 0) {
-            GLEventImpl.enlarge();
-        }
+        //if (wheel > 0) {
+        //    GLEventImpl.small();
+        //} else if (wheel < 0) {
+        //    GLEventImpl.enlarge();
+        //}
+        GLEventImpl.scrollCallback(wheel);
         checkOrthoAndRepaint();
     }
 
@@ -73,10 +103,9 @@ public class JOGLController implements Initializable {
         y0 = (int) event.getY();
     }
 
-
     @FXML
     void mouseDragged(MouseEvent event) {
-        //拖拽增量，不同于swing，原点在左下角
+         //拖拽增量，不同于swing，原点在左下角
         int dx = (int) event.getX() - x0;
         int dy = y0 - (int) event.getY();
 
@@ -92,13 +121,6 @@ public class JOGLController implements Initializable {
             float[] rotate = GLEventImpl.rotate;
             double moveX = (dx * Math.cos(rotate[1] / 180 * Math.PI) + dy * Math.cos(rotate[0] / 180 * Math.PI) * Math.sin(rotate[1] / 180 * Math.PI)) * 0.5 / GLEventImpl.scale;
             double moveY = (dy * Math.cos(rotate[0] / 180 * Math.PI) * Math.cos(rotate[1] / 180 * Math.PI) - dx * Math.sin(rotate[1] / 180 * Math.PI)) * 0.5 / GLEventImpl.scale;
-
-            //中键拖拽——模型平移
-            if (event.getButton() == MouseButton.MIDDLE) {
-                //todo
-                return;
-            }
-
             //右键拖拽——视角平移
             if (event.getButton() == MouseButton.SECONDARY) {
                 GLEventImpl.translate[0] += moveX;
