@@ -18,7 +18,6 @@ public class Vector3f {
         this.z = z;
     }
 
-
     /**
      * 求负向量
      * 把向量的各个分量求负，可得其负向量。简单地说就是 x + (-x) = 0。
@@ -54,26 +53,6 @@ public class Vector3f {
      */
     public float lengthSquared() {
         return x * x + y * y + z * z;
-    }
-
-    /**
-     * 标量乘法
-     *
-     * 标量与向量的乘法非常直接，将向量的每个分量都与标量相乘即可。
-     */
-    public Vector3f mult(float scalor) {
-        return new Vector3f(x * scalor, y * scalor, z * scalor);
-    }
-
-    /**
-     * 标量乘法
-     *
-     */
-    public Vector3f multLocal(float scalor) {
-        x *= scalor;
-        y *= scalor;
-        z *= scalor;
-        return this;
     }
 
     /**
@@ -149,11 +128,137 @@ public class Vector3f {
 
     /**
      * 向量减法
+     * @return
+     */
+    public Vector3f subtract(Vector3f v, Vector3f result) {
+        if(result == null) {
+            result = new Vector3f();
+        }
+        result.x = x - v.x;
+        result.y = y - v.y;
+        result.z = z - v.z;
+        return result;
+    }
+
+    /**
+     * 向量减法
      */
     public Vector3f subtractLocal(Vector3f v) {
         x -= v.x;
         y -= v.y;
         z -= v.z;
+        return this;
+    }
+
+    /**
+     * 标量乘法
+     *
+     * 标量与向量的乘法非常直接，将向量的每个分量都与标量相乘即可。
+     */
+    public Vector3f mult(float scalor) {
+        return new Vector3f(x * scalor, y * scalor, z * scalor);
+    }
+
+    /**
+     * 标量乘法
+     *
+     * @param scalor
+     * @return
+     */
+    public Vector3f mult(float scalor, Vector3f store) {
+        if (store == null) {
+            store = new Vector3f();
+        }
+        store.set(x * scalor, y * scalor, z * scalor);
+        return store;
+    }
+
+    /**
+     * 标量乘法
+     *
+     */
+    public Vector3f multLocal(float scalor) {
+        x *= scalor;
+        y *= scalor;
+        z *= scalor;
+        return this;
+    }
+
+    /**
+     * 向量乘法
+     *
+     * @param v
+     * @return
+     */
+    public Vector3f mult(Vector3f v) {
+        return new Vector3f(x * v.x, y * v.y, z * v.z);
+    }
+
+    /**
+     * 向量乘法
+     * @param vec
+     * @param store
+     * @return
+     */
+    public Vector3f mult(Vector3f vec, Vector3f store) {
+        if (store == null) store = new Vector3f();
+        return store.set(x * vec.x, y * vec.y, z * vec.z);
+    }
+
+    /**
+     * 向量乘法
+     *
+     * @param v
+     * @return
+     */
+    public Vector3f multLocal(Vector3f v) {
+        x *= v.x;
+        y *= v.y;
+        z *= v.z;
+        return this;
+    }
+
+    /**
+     * 标量除法
+     * @param scalor
+     * @return
+     */
+    public Vector3f divide(float scalor) {
+        scalor = 1 / scalor;
+        return new Vector3f(x * scalor, y * scalor, z * scalor);
+    }
+
+    /**
+     * 标量除法
+     * @param scalor
+     * @return
+     */
+    public Vector3f divideLocal(float scalor) {
+        scalor = 1 / scalor;
+        x *= scalor;
+        y *= scalor;
+        z *= scalor;
+        return this;
+    }
+
+    /**
+     * 向量除法
+     * @param v
+     * @return
+     */
+    public Vector3f divide(Vector3f v) {
+        return new Vector3f( x / v.x, y / v.y, z / v.z);
+    }
+
+    /**
+     * 向量除法
+     * @param v
+     * @return
+     */
+    public Vector3f divideLocal(Vector3f v) {
+        x /= v.x;
+        y /= v.y;
+        z /= v.z;
         return this;
     }
 
@@ -230,6 +335,22 @@ public class Vector3f {
 
     /**
      * 向量叉乘（外积）
+     *
+     * @param v
+     * @param result
+     * @return
+     */
+    public Vector3f cross(Vector3f v, Vector3f result) {
+        if (result == null) result = new Vector3f();
+        float resX = ((y * v.x) - (z * v.y));
+        float resY = ((z * v.x) - (x * v.z));
+        float resZ = ((x * v.y) - (y * v.x));
+        result.set(resX, resY, resZ);
+        return result;
+    }
+
+    /**
+     * 向量叉乘（外积）
      */
     public Vector3f crossLocal(Vector3f v) {
         float tempX = y * v.z - z * v.y;
@@ -237,6 +358,31 @@ public class Vector3f {
         z = x * v.y - y * v.x;
         x = tempX;
         y = tempY;
+        return this;
+    }
+
+    /**
+     * 设置向量的三个分量。
+     *
+     * @param x
+     * @param y
+     * @param z
+     */
+    public Vector3f set(float x, float y, float z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        return this;
+    }
+
+    /**
+     * 设置向量的三个分量
+     * @param v
+     */
+    public Vector3f set(Vector3f v) {
+        this.x = v.x;
+        this.y = v.y;
+        this.z = v.z;
         return this;
     }
 }

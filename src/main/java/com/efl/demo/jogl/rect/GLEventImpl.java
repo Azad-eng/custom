@@ -28,7 +28,7 @@ public class GLEventImpl extends Canvas implements GLEventListener {
     public static float scale = 1.0f, maxscale = 20.0f, minscale = 0.2f;
     public static float[] rotate = {-45.0f, 45.0f};
     public static float[] translate = {-24f, -14f, -30f};
-    public static float[] lightPos = {20f, 30f, 50f};
+    public static float[] lightPos = {0.0f, 50f, -100f};
     public static float[][] cubePositions = {{0.0f,  0.0f,  0.0f}};
     public static boolean ortho = false;
     private GLU glu = new GLU();
@@ -85,14 +85,12 @@ public class GLEventImpl extends Canvas implements GLEventListener {
     //private IntBuffer indiBuf = Buffers.newDirectIntBuffer(indices);
     private PixelWriter pxWriter;
     private ByteBuffer imageBufferRGB8;
-    private static Camera camera;
-    private static float deltaTime = 0.0f;
-    private float lastFrame = 0.0f;
-    private static int direction = 0;
+    private Camera camera;
 
-    public GLEventImpl(int screenWidth, int screenHeight, PixelWriter pxWriter) {
+    public GLEventImpl(int screenWidth, int screenHeight, PixelWriter pxWriter, Camera camera) {
         setBounds(screenWidth, screenHeight);
         setPxWriter(pxWriter);
+        this.camera = camera;
     }
 
     public void setPxWriter(PixelWriter pxWriter) {
@@ -107,19 +105,10 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         }
     }
 
-    public static void doMovement(int direction){
-        GLEventImpl.direction = direction;
-        doMovement();
-    }
-    public static void doMovement(){
-        camera.ProcessKeyboard(direction, deltaTime);
-    }
-
 
     @Override
     public void init(GLAutoDrawable drawable) {
         GL2 gl = drawable.getGL().getGL2();
-        camera = new Camera(new Vector3f(0.0f, 0.0f, 3.0f));
         //生成EBO对象
         //gl.glGenBuffers(this.EBO.length, this.EBO, 0);
         //与VBO类似，我们先绑定EBO然后用glBufferData把索引复制到缓冲里。同样，和VBO类似，
@@ -213,9 +202,6 @@ public class GLEventImpl extends Canvas implements GLEventListener {
 
     @Override
     public void display(GLAutoDrawable drawable) {
-        float currentFrame = System.currentTimeMillis();
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
         //doMovement();
         // Update variables used in animation
         final GL2 gl = drawable.getGL().getGL2();
@@ -233,57 +219,12 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         FloatBuffer vb = Buffers.newDirectFloatBuffer(16);
         FloatBuffer pb = Buffers.newDirectFloatBuffer(16);
 
-        // 记得激活着色器
-        gl.glUseProgram(lightProgram);
-        // Set matrices
-        gl.glUniformMatrix4fv(viewLoc, 1, false, vb);
-        gl.glUniformMatrix4fv(projLoc, 1,false, pb);
-        new Matrix4f().scale(0.2f).get(lmb);
-        new Matrix4f().translate( lightPos[0], lightPos[1], lightPos[2]).get(lmb);
-        gl.glUniformMatrix4fv(modelLoc, 1, false, lmb);
-        // Draw the light object (using light's vertex attributes)
-        gl.glBindVertexArray(lightVAO[0]);
-        gl.glDrawArrays(GL_TRIANGLES, 0, 36);
-        gl.glBindVertexArray(0);
-
-        //调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象。
-        //在glUseProgram函数调用之后，每个着色器调用和渲染调用都会使用这个程序对象（也就是之前写的着色器)了
-        gl.glUseProgram(shaderProgram);
-
         /**
          * 观察矩阵
          * 2.world coordinates ——[view matrix]——>> camera coordinates
          */
-        Matrix4f matrix4f = new Matrix4f();
-        //matrix4f.identity();
-        //if (ortho) {
-        //    //gl.glTranslated(0.0, 0.0, -350.0);
-        //    matrix4f.translate(0.0f, 0.0f, -350.0f).get(vb);
-        //}
-        ////如果是透视视图，依靠近大远小的效果改变视角与模型距离即可实现模型的缩放
-        //else {
-        //    //gl.glTranslated(0.0, 0.0, -350.0 / scale);
-        //    matrix4f.translate(0.0f, 0.0f, -350.0f /scale).get(vb);
-        //}
-        //绕X轴旋转
-        //matrix4f.rotate(rotate[0], 1.0f, 0.0f, 0.0f).get(vb);
-        //绕Z轴旋转
-        //matrix4f.rotate(rotate[1], 0.0f, 0.0f, 1.0f).get(vb);
-        //matrix4f.translate(translate[0], translate[1], translate[2]).get(vb);
-        camera.getViewMatrix(matrix4f).get(vb);
-        //matrix4f.lookAt( // the position of your camera, in world space
-        //        cameraPos.x, cameraPos.y, cameraPos.z, //Camera is at (0,0,-1), in World Space
-        //        // where you want to look at, in world space
-        //        cameraPos.add(cameraFront).x, cameraPos.add(cameraFront).y, cameraPos.add(cameraFront).z, //and looks at the origin
-        //        // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
-        //        cameraUp.x, cameraUp.y, cameraUp.z).get(vb); //Head is up (set to 0,-1,0 to look upside-down)
-
-        //matrix4f.lookAt( // the position of your camera, in world space
-        //        0.0f, 0.0f, -1.0f, //Camera is at (0,0,3), in World Space
-        //        // where you want to look at, in world space
-        //        0.0f, 0.0f, 0.0f, //and looks at the origin
-        //        // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
-        //        0.0f, -1.0f, 0.0f).get(vb); //Head is up (set to 0,-1,0 to look upside-down)
+        camera.setLocation(new Vector3f(0,0,0));
+        camera.getViewMatrix().get(vb);
 
         /**
          * 投影矩阵
@@ -292,8 +233,21 @@ public class GLEventImpl extends Canvas implements GLEventListener {
          * clip = projection * view * model * local （注意：在着色器中 顺序不能变，需要从右往左乘上每个矩阵，因为
          * 每个矩阵被运算的顺序是相反。最后的顶点应该被赋予顶点着色器中的gl_Position且OpenGL将会自动进行透视划分和裁剪）
          */
-        new Matrix4f().perspective(camera.zoom, 4f/3f, 0.1f, 1000.0f).get(pb);
+        camera.getProjectionMatrix().get(pb);
 
+        // 记得激活着色器
+        gl.glUseProgram(lightProgram);
+        gl.glUniformMatrix4fv(viewLoc, 1, false, vb);
+        gl.glUniformMatrix4fv(projLoc, 1,false, pb);
+        new Matrix4f().scale(1f).get(lmb);
+        new Matrix4f().translate( lightPos[0], lightPos[1], lightPos[2]).get(lmb);
+        gl.glUniformMatrix4fv(modelLoc, 1, false, lmb);
+        // Draw the light object (using light's vertex attributes)
+        gl.glBindVertexArray(lightVAO[0]);
+        gl.glDrawArrays(GL_TRIANGLES, 0, 36);
+        gl.glBindVertexArray(0);
+
+        gl.glUseProgram(shaderProgram);
         // 在此之前不要忘记首先'使用'对应的着色器程序(来设定uniform)
         int objectColorLoc = gl.glGetUniformLocation(shaderProgram, "objectColor");
         int lightColorLoc  = gl.glGetUniformLocation(shaderProgram, "lightColor");
@@ -324,7 +278,8 @@ public class GLEventImpl extends Canvas implements GLEventListener {
              * 通过将顶点坐标乘以下面的模型矩阵我们将该顶点坐标转换到世界坐标
              */
             Matrix4f model = new Matrix4f();
-            model.translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2])
+            model.scale(GLEventImpl.scale)
+                 .translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2])
                  //.rotate(20.0f * i, 1.0f, 0.3f, 0.5f)
                  .get(mb);
             gl.glUniformMatrix4fv(modelLoc, 1, false, mb);
@@ -333,8 +288,6 @@ public class GLEventImpl extends Canvas implements GLEventListener {
         //解绑VAO
         gl.glBindVertexArray(0);
         drawPlatform(gl);
-
-        //gl.glPopMatrix();
 
         gl.glReadBuffer(GL.GL_FRONT);
         gl.glReadPixels(0, 0, screenWidth, screenHeight, GL.GL_BGRA, GL.GL_UNSIGNED_BYTE, imageBufferRGB8);
@@ -347,41 +300,12 @@ public class GLEventImpl extends Canvas implements GLEventListener {
 
     @Override
     public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
-        System.out.println("reshape" + width + " " + height);
-        //get the OpenGL 2 graphics object
-        final GL2 gl = drawable.getGL().getGL2();
-        //preventing devided by 0 exception
-        if (height <= 0) {
-            height = 1;
-        }
-        double fAspect = (double) width / height;
-        // display area to cover the entire window
-        gl.glViewport(0, 0, width, height);
-        //transforming projection matrix
-        gl.glMatrixMode(GL2.GL_PROJECTION);
-        gl.glLoadIdentity();
-        //正交视图
-        if (ortho) {
-            double nRange = 80.0 / scale;
-            if (width <= height) {
-                //正交视图范围 (left,right,bottom,top,near,far)
-                gl.glOrtho(-nRange, nRange, -nRange / fAspect, nRange / fAspect, 1, 2000);
-            } else {
-                gl.glOrtho(-nRange * fAspect, nRange * fAspect, -nRange, nRange, 1, 2000);
-            }
-        }
-        //透视视图
-        else {
-            glu.gluPerspective(25.0f, fAspect, 1.0f, 2000.0f);
-        }
-        //transforming model view
-        gl.glMatrixMode(GL2.GL_MODELVIEW);
-        gl.glLoadIdentity();
+
     }
 
-    public static void scrollCallback(double yoffset) {
-        camera.ProcessMouseScroll((float)yoffset);
-    }
+    //public static void scrollCallback(double yoffset) {
+    //    camera.ProcessMouseScroll((float)yoffset);
+    //}
 
     public static void resetTranslate() {
         translate[0] = -24;

@@ -9,6 +9,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import org.joml.Vector2f;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -17,21 +18,59 @@ import java.util.ResourceBundle;
  * @author EFL-tjl
  */
 public class JOGLController implements Initializable {
+    private Camera camera;
     public JOGL_FxCanvas canvas;
-    int x0, y0;
-    private float lastX = 320;
-    private float lastY = 240;
-    private float yaw = -90.0f;
-    private float pitch = 0.0f;
+    private boolean[] keys = new boolean[65536];
+    private boolean[] mouse = new boolean[4];
+
+    private Vector2f start = new Vector2f();
+    private Vector2f current = new Vector2f();
+    private Vector2f delta = new Vector2f();
 
     @FXML
     private ScrollPane pane3D;
     @FXML
     private ImageView orthoImage;
 
+    public Camera getCamera() {
+        return camera;
+    }
+
+    /**
+     * 返回鼠标的按键状态
+     * @param button
+     * @return
+     */
+    public boolean getMouseButton(int button) {
+        return mouse[button];
+    }
+    /**
+     * 获得鼠标的起点坐标
+     * @return
+     */
+    public Vector2f getStart() {
+        return start;
+    }
+    /**
+     * 获得鼠标的当前坐标
+     * @return
+     */
+    public Vector2f getCurrent() {
+        return current;
+    }
+    /**
+     * 返回鼠标的相对位移
+     * @return
+     */
+    public Vector2f getDelta() {
+        return delta;
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        canvas = new JOGL_FxCanvas(640, 480);
+        // 创建摄像机
+        camera = new Camera(640, 480);
+        canvas = new JOGL_FxCanvas(640, 480, camera);
         pane3D.setContent(canvas);
         //去除scrollpane的蓝色边框，此种方法将来可能会过时
         pane3D.getStyleClass().add("edge-to-edge");
@@ -54,39 +93,7 @@ public class JOGLController implements Initializable {
 
     @FXML
     void keyPressed(KeyEvent event) {
-        switch (event.getCode()) {
-            case W:
-            case UP:
-                GLEventImpl.doMovement(0);
-                break;
-            case S:
-            case DOWN:
-                GLEventImpl.doMovement(1);
-                break;
-            case A:
-            case LEFT:
-                GLEventImpl.doMovement(2);
-                break;
-            case D:
-            case RIGHT:
-                GLEventImpl.doMovement(3);
-                break;
-        }
-        checkOrthoAndRepaint();
-        event.consume();
-    }
 
-    @FXML
-    void mouseScroll(ScrollEvent event) {
-        //DeltaY会产生响应
-        double wheel = event.getDeltaY();
-        //if (wheel > 0) {
-        //    GLEventImpl.small();
-        //} else if (wheel < 0) {
-        //    GLEventImpl.enlarge();
-        //}
-        GLEventImpl.scrollCallback(wheel);
-        checkOrthoAndRepaint();
     }
 
     public void checkOrthoAndRepaint() {
@@ -98,41 +105,77 @@ public class JOGLController implements Initializable {
     }
 
     @FXML
-    void mousePressed(MouseEvent event) {
-        x0 = (int) event.getX();
-        y0 = (int) event.getY();
+    void mouseScroll(ScrollEvent event) {
+        //DeltaY会产生响应
+        double wheel = event.getDeltaY();
+        if (wheel > 0) {
+            GLEventImpl.small();
+        } else if (wheel < 0) {
+            GLEventImpl.enlarge();
+        }
+        checkOrthoAndRepaint();
     }
 
     @FXML
-    void mouseDragged(MouseEvent event) {
-         //拖拽增量，不同于swing，原点在左下角
-        int dx = (int) event.getX() - x0;
-        int dy = y0 - (int) event.getY();
-
-        //左键拖拽——视角旋转
+    void mousePressed(MouseEvent event) {
         if (event.getButton() == MouseButton.PRIMARY) {
-            if (dx != 0) {
-                GLEventImpl.rotateZ(dx * 0.5);
-            }
-            if (dy != 0) {
-                GLEventImpl.rotateX(dy * -0.5);
-            }
+            mouse[0] = true;
+        } else if (event.getButton() == MouseButton.SECONDARY) {
+            mouse[1] = true;
+        } else if (event.getButton() == MouseButton.MIDDLE) {
+            mouse[2] = true;
         } else {
-            float[] rotate = GLEventImpl.rotate;
-            double moveX = (dx * Math.cos(rotate[1] / 180 * Math.PI) + dy * Math.cos(rotate[0] / 180 * Math.PI) * Math.sin(rotate[1] / 180 * Math.PI)) * 0.5 / GLEventImpl.scale;
-            double moveY = (dy * Math.cos(rotate[0] / 180 * Math.PI) * Math.cos(rotate[1] / 180 * Math.PI) - dx * Math.sin(rotate[1] / 180 * Math.PI)) * 0.5 / GLEventImpl.scale;
-            //右键拖拽——视角平移
-            if (event.getButton() == MouseButton.SECONDARY) {
-                GLEventImpl.translate[0] += moveX;
-
-                GLEventImpl.translate[1] += moveY;
-
-                GLEventImpl.translate[2] += -dy * Math.sin(rotate[0] / 180 * Math.PI) * 0.5;
-            }
+            mouse[3] = true;
         }
-        canvas.repaint();
-        x0 = (int) event.getX();
-        y0 = (int) event.getY();
+        start.set((float)event.getX(), (float)event.getY());
+        current.set((float)event.getX(), (float)event.getY());
+        delta.set(0, 0);
+    }
+
+    @FXML
+    void mouseReleased(MouseEvent event) {
+        if (event.getButton() == MouseButton.PRIMARY) {
+            mouse[0] = false;
+        } else if (event.getButton() == MouseButton.SECONDARY) {
+            mouse[1] = false;
+        } else if (event.getButton() == MouseButton.MIDDLE) {
+            mouse[2] = false;
+        } else {
+            mouse[3] = false;
+        }
+    }
+
+    // 记录鼠标的点击位置，用于计算鼠标在画布上的相对位移。
+    private Vector2f last = new Vector2f(-1, -1);
+    private Vector2f cur = new Vector2f();
+    // 鼠标灵敏度
+    private float sensitive = 0.003f;
+    @FXML
+    void mouseDragged(MouseEvent event) {
+        current.set((float)event.getX(), (float)event.getY());
+        current.sub(start, delta);
+
+        if (mouse[0]) {
+            // 首次按键PRIMARY
+            //if (last.x == -1 && last.y == -1) {
+                last.set(start);
+            //}
+            cur.set(current);
+
+            // 计算相对位移
+            float dx = cur.x - last.x;
+            float dy = cur.y - last.y;
+
+            if (dx*dx + dy*dy > 0) {
+                camera.rotate(-dy * sensitive, -dx * sensitive, 0);
+                last.set(cur);
+            }
+
+        } else {
+            last.set(-1, -1);
+        }
+        start.set((float)event.getX(), (float)event.getY());
+        canvasReshape();
     }
 
     @FXML
@@ -144,6 +187,7 @@ public class JOGLController implements Initializable {
             GLEventImpl.ortho = true;
             orthoImage.setImage(new Image("/icons/ortho.png"));
         }
+        camera.setParallel(!GLEventImpl.ortho);
         canvasReshape();
     }
 

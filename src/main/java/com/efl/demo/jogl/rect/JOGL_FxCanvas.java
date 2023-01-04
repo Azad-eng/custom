@@ -13,7 +13,7 @@ public class JOGL_FxCanvas extends Canvas {
     private final GLOffscreenAutoDrawable glDrawBuffer;
     private final GLEventImpl glEvent;
 
-    public JOGL_FxCanvas(int width, int height) {
+    public JOGL_FxCanvas(int width, int height, Camera camera) {
         super(width, height);
 
         //从opengl获取的图像的坐标原点在屏幕左上角，而fxCanvas的坐标原点在左下角，需要进行沿Y轴翻转（也可能是opengl坐标系原点在左下角，屏幕原点在左上角，总之进行一次Y轴翻转显示的图像符合笛卡尔坐标系）
@@ -32,7 +32,7 @@ public class JOGL_FxCanvas extends Canvas {
                 width, height);
         glDrawBuffer.setAutoSwapBufferMode(true);
 
-        glEvent = new GLEventImpl(width, height, this.getGraphicsContext2D().getPixelWriter());
+        glEvent = new GLEventImpl(width, height, this.getGraphicsContext2D().getPixelWriter(), camera);
         glDrawBuffer.addGLEventListener(glEvent);
         repaint();
 
